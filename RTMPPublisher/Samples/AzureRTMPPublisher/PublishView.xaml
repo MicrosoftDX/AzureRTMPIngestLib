@@ -1,0 +1,188 @@
+﻿<!--
+  /****************************************************************************************************************************
+
+RTMP Live Publishing Library
+
+Copyright (c) Microsoft Corporation
+
+All rights reserved.
+
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation 
+files (the ""Software""), to deal in the Software without restriction, including without limitation the rights to use, copy, 
+modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software 
+is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS 
+BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF 
+OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+*****************************************************************************************************************************/
+  -->
+  
+  <Page
+    x:Class="RTMPPublisher.PublishView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:RTMPPublisher"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mmppf="using:Microsoft.PlayerFramework"
+    xmlns:pfadaptive="using:Microsoft.PlayerFramework.Adaptive"
+    mc:Ignorable="d"
+    d:DesignHeight="300"
+    d:DesignWidth="400">
+
+  <Page.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="AppStyles.xaml"/>
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Page.Resources>
+  
+  <Grid x:Name="LayoutRoot">
+    <VisualStateManager.VisualStateGroups>
+      <VisualStateGroup x:Name="VisualStateGroup">
+        <VisualState x:Name="Width800">
+          <VisualState.Setters>
+            <Setter Value="Top" Target="btnSettings.VerticalAlignment"/>
+            <Setter Target="btnSettings.(FrameworkElement.Margin)">
+              <Setter.Value>
+                <Thickness>0,10,10,0</Thickness>
+              </Setter.Value>
+            </Setter>
+            <Setter Value="Center" Target="gridMainButtons.VerticalAlignment"/>
+            <Setter Value="Right" Target="gridMainButtons.HorizontalAlignment"/>
+            <Setter Value="1" Target="btnPublish.(Grid.RowSpan)"/>
+            <Setter Value="1" Target="btnStream.(Grid.RowSpan)"/>
+            <Setter Value="2" Target="btnPublish.(Grid.ColumnSpan)"/>
+            <Setter Value="2" Target="btnStream.(Grid.ColumnSpan)"/>
+            <Setter Value="0" Target="btnPublish.(Grid.Row)"/>
+            <Setter Value="1" Target="btnStream.(Grid.Row)"/>
+            <Setter Value="0" Target="btnPublish.(Grid.Column)"/>
+            <Setter Value="0" Target="btnStream.(Grid.Column)"/>
+            <Setter Value="Right" Target="gridMainButtons.HorizontalAlignment"/>
+            <Setter Target="btnPublish.(FrameworkElement.Margin)">
+              <Setter.Value>
+                <Thickness>0,0,0,10</Thickness>
+              </Setter.Value>
+            </Setter>
+            <Setter Target="gridMainButtons.(FrameworkElement.Margin)">
+              <Setter.Value>
+                <Thickness>0,0,10,0</Thickness>
+              </Setter.Value>
+            </Setter>
+            <Setter Value="Bottom" Target="mpStreamPreview.VerticalAlignment"/>
+            <Setter Value="270" Target="mpStreamPreview.Height"/>
+            <Setter Value="480" Target="mpStreamPreview.Width"/>
+          </VisualState.Setters>
+          <VisualState.StateTriggers>
+            <AdaptiveTrigger MinWindowWidth="800"/>
+          </VisualState.StateTriggers>
+        </VisualState>
+      </VisualStateGroup>
+
+      <VisualStateGroup x:Name="SettingsStates">
+        <VisualState x:Name="HideSettings"/>
+        <VisualState x:Name="ShowRightPanelSettingsLauncher">
+          <VisualState.Setters>
+            <Setter Target="ccSettingsPanelRight.(FrameworkElement.Width)" Value="400"/>
+            <Setter Target="ccSettingsLauncher.(FrameworkElement.Visibility)" Value="Visible"/>
+            <Setter Target="ccOutputSettings.(FrameworkElement.Visibility)" Value="Collapsed"/>
+            <Setter Target="ccDeviceSettings.(FrameworkElement.Visibility)" Value="Collapsed"/>
+            <!--<Setter Target="ccStreamSettings.(FrameworkElement.Visibility)" Value="Collapsed"/>-->
+          </VisualState.Setters>
+        </VisualState>
+        <VisualState x:Name="ShowRightPanelDeviceSettings">
+          <VisualState.Setters>
+            <Setter Target="ccSettingsPanelRight.(FrameworkElement.Width)" Value="400"/>
+            <Setter Target="ccSettingsLauncher.(FrameworkElement.Visibility)" Value="Collapsed"/>
+            <Setter Target="ccOutputSettings.(FrameworkElement.Visibility)" Value="Collapsed"/>
+            <Setter Target="ccDeviceSettings.(FrameworkElement.Visibility)" Value="Visible"/>
+            <!--<Setter Target="ccStreamSettings.(FrameworkElement.Visibility)" Value="Collapsed"/>-->
+          </VisualState.Setters>
+        </VisualState>
+        <VisualState x:Name="ShowRightPanelOutputSettings">
+          <VisualState.Setters>
+            <Setter Target="ccSettingsPanelRight.(FrameworkElement.Width)" Value="400"/>
+            <Setter Target="ccSettingsLauncher.(FrameworkElement.Visibility)" Value="Collapsed"/>
+            <Setter Target="ccOutputSettings.(FrameworkElement.Visibility)" Value="Visible"/>
+            <Setter Target="ccDeviceSettings.(FrameworkElement.Visibility)" Value="Collapsed"/>
+            <!--<Setter Target="ccStreamSettings.(FrameworkElement.Visibility)" Value="Collapsed"/>-->
+          </VisualState.Setters>
+        </VisualState>
+        <VisualState x:Name="ShowRightPanelStreamSettings">
+          <VisualState.Setters>
+            <Setter Target="ccSettingsPanelRight.(FrameworkElement.Width)" Value="400"/>
+            <Setter Target="ccSettingsLauncher.(FrameworkElement.Visibility)" Value="Collapsed"/>
+            <Setter Target="ccOutputSettings.(FrameworkElement.Visibility)" Value="Collapsed"/>
+            <Setter Target="ccDeviceSettings.(FrameworkElement.Visibility)" Value="Collapsed"/>
+            <!--<Setter Target="ccStreamSettings.(FrameworkElement.Visibility)" Value="Visible"/>-->
+          </VisualState.Setters>
+        </VisualState>
+      </VisualStateGroup>
+    </VisualStateManager.VisualStateGroups>
+
+
+
+    <CaptureElement x:Name="ceSourcePreview" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+    <mmppf:MediaPlayer x:Name="mpStreamPreview" Visibility="Collapsed" AutoPlay="True" HorizontalAlignment="Right" VerticalAlignment="Top" 
+                       Margin="20"
+                       Width="320" Height="180">
+      <mmppf:MediaPlayer.Plugins>
+        <pfadaptive:AdaptivePlugin />
+      </mmppf:MediaPlayer.Plugins>
+    </mmppf:MediaPlayer>
+   
+
+
+
+    <Grid x:Name="SettingsDismiss" Grid.ColumnSpan="2" Background="Transparent" PointerPressed="SettingsDismiss_PointerPressed"/>
+
+    <AppBarButton x:Name="btnSettings" Icon="More" Label="" Foreground="White"  
+                  Style="{StaticResource SettingsAppBarButtonStyle}" 
+                  HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Click="btnSettings_Click" Grid.ColumnSpan="2"/>
+
+    <Grid x:Name="gridMainButtons" HorizontalAlignment="Center" VerticalAlignment="Bottom" MinWidth="48" MinHeight="48" Margin="0,0,0,10">
+      <Grid.RowDefinitions>
+        <RowDefinition/>
+        <RowDefinition/>
+      </Grid.RowDefinitions>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition/>
+        <ColumnDefinition/>
+      </Grid.ColumnDefinitions>
+      <AppBarToggleButton x:Name="btnPublish" Icon="Send" Label="" Foreground="White" 
+    		HorizontalAlignment="Right" VerticalAlignment="Center" Checked="btnPublish_Checked" Unchecked="btnPublish_Unchecked" Style="{StaticResource AppBarToggleButtonStyle}" 
+                          Width="Auto" MinWidth="48" MinHeight="48" Margin="0,0,10,0" Grid.RowSpan="2" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="1"/>
+      <AppBarToggleButton x:Name="btnStream" Icon="Play" Label="" Foreground="White"
+      	HorizontalAlignment="Right" Margin="0" VerticalAlignment="Bottom" Checked="btnStream_Checked" Unchecked="btnStream_Unchecked" 
+                          Style="{StaticResource AppBarToggleButtonStyle}" IsEnabled="False"
+                          Grid.RowSpan="2" Grid.Row="0" Grid.Column="1" Width="Auto" MinWidth="48" MinHeight="48" Grid.ColumnSpan="1"/>
+    </Grid>
+    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="7.5,7.5,0,0" Orientation="Horizontal">
+      <AppBarButton Icon="Back"  x:Name="btnBack" Click="btnBack_Click" Foreground="Wheat"/>
+      <TextBlock x:Name="tbChannel" Foreground="Wheat" FontSize="22" Margin="10,0,0,0"/>
+      <TextBlock x:Name="tbClock" Foreground="Wheat" FontSize="22" Margin="10,0,0,0"/>
+      
+    </StackPanel>
+    
+    <ContentControl x:Name="ccSettingsPanelRight" HorizontalAlignment="Right" VerticalAlignment="Stretch" Width="0" Margin="0"
+                    VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch" Opacity="0.90">
+      <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch"  >
+        <local:SettingsLauncher HorizontalAlignment="Stretch" VerticalAlignment="Stretch" OnDismissed="OnSettingsDismissed"
+                                OnSettingsSelectionChanged="SettingsLauncher_OnSettingsSelectionChanged" x:Name="ccSettingsLauncher" />
+        <local:DeviceSettings HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="Collapsed" x:Name="ccDeviceSettings" OnDismissed="OnSettingsDismissed"/>
+        <local:OutputSettings HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="Collapsed" x:Name="ccOutputSettings" OnDismissed="OnSettingsDismissed"/>
+        <!--<local:StreamSettings HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="Collapsed" x:Name="ccStreamSettings" OnDismissed="OnSettingsDismissed"/>-->
+      </Grid>
+    </ContentControl> 
+
+  </Grid>
+</Page>

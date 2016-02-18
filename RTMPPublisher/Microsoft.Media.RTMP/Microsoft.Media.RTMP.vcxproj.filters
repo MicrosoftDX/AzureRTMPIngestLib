@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resources">
+      <UniqueIdentifier>870d940a-dc1d-474c-bc12-7df05fd97b15</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tga;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Constants.cpp" />
+    <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="RTMPAudioStreamSink.cpp" />
+    <ClCompile Include="RTMPMessenger.cpp" />
+    <ClCompile Include="RTMPPublisherSink.cpp" />
+    <ClCompile Include="RTMPPublishSession.cpp" />
+    <ClCompile Include="RTMPStreamSinkBase.cpp" />
+    <ClCompile Include="RTMPVideoStreamSink.cpp" />
+    <ClCompile Include="SinkWriterCallbackImpl.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="AVCParser.h" />
+    <ClInclude Include="BitOp.h" />
+    <ClInclude Include="Constants.h" />
+    <ClInclude Include="EventArgs.h" />
+    <ClInclude Include="Logger.h" />
+    <ClInclude Include="MediaEventGeneratorImpl.h" />
+    <ClInclude Include="MediaTypeHandlerImpl.h" />
+    <ClInclude Include="ProfileState.h" />
+    <ClInclude Include="PublishProfile.h" />
+    <ClInclude Include="RTMPAudioStreamSink.h" />
+    <ClInclude Include="RTMPChunking.h" />
+    <ClInclude Include="RTMPMessageFormats.h" />
+    <ClInclude Include="RTMPMessenger.h" />
+    <ClInclude Include="RTMPPublisherSink.h" />
+    <ClInclude Include="RTMPPublishSession.h" />
+    <ClInclude Include="RTMPSessionManager.h" />
+    <ClInclude Include="RTMPStreamSinkBase.h" />
+    <ClInclude Include="RTMPVideoStreamSink.h" />
+    <ClInclude Include="SinkWriterCallbackImpl.h" />
+    <ClInclude Include="Uri.h" />
+    <ClInclude Include="Workitem.h" />
+  </ItemGroup>
+</Project>

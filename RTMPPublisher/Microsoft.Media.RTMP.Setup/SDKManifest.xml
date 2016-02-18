@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<FileList
+    DisplayName = "Microsoft RTMP Publish Library for Windows"
+    TargetPlatform="UAP"
+    SDKType="External"
+    Identity = "Microsoft RTMP Publish Library for Windows, Version=1.0.0.0"
+    MinVSVersion = "14.0"
+    AppliesTo = "WindowsAppContainer + (CSharp | VB | VisualC | JavaScript)"
+    TargetPlatformMinVersion="10.0.10240.0"
+    TargetPlatformVersion="10.0.10586.0"
+    SupportedArchitectures = "x86;x64;ARM"
+    SupportsMultipleVersions="Error"
+    DependsOn = "Microsoft.VCLibs, Version=14.0">
+  <File Reference="Microsoft.Media.RTMP.winmd" Implementation="Microsoft.Media.RTMP.dll" />
+</FileList>
+

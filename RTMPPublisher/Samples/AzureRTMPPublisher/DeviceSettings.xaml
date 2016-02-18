@@ -1,0 +1,77 @@
+﻿<!--
+  /****************************************************************************************************************************
+
+RTMP Live Publishing Library
+
+Copyright (c) Microsoft Corporation
+
+All rights reserved.
+
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation 
+files (the ""Software""), to deal in the Software without restriction, including without limitation the rights to use, copy, 
+modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software 
+is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS 
+BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF 
+OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+*****************************************************************************************************************************/
+  -->
+  <UserControl
+    x:Class="RTMPPublisher.DeviceSettings"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:RTMPPublisher"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    d:DesignHeight="300"
+    d:DesignWidth="400">
+
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="AppStyles.xaml"/>
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+
+  <Grid Background="DarkGray" >
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+    <AppBarButton x:Name="btnDismiss" MinHeight="24" MinWidth="24" Click="btnDismiss_Click" Grid.Row="0"
+                    Foreground="White" Margin="7.5,7.5,0,0" Icon="Back" Width="Auto"/>
+    <ScrollViewer Grid.Row="1" Margin="10,5,0,0">
+      <RelativePanel >
+        <TextBlock x:Name="textBlock" TextWrapping="Wrap" Text="Device Settings" Foreground="White" FontSize="18"/>
+        <TextBlock x:Name="textBlock1" TextWrapping="Wrap" Text="Camera" RelativePanel.AlignLeftWithPanel="True" RelativePanel.Below="textBlock" Margin="0,10,0,5" Foreground="White" FontSize="16"/>
+        <ComboBox x:Name="cbxCamera" ItemTemplate="{StaticResource dtDevice}" 
+                SelectionChanged="OnCameraSelectionChanged"
+                HorizontalAlignment="Stretch" VerticalAlignment="Stretch" RelativePanel.AlignLeftWithPanel="True" 
+                RelativePanel.Below="textBlock1" MinWidth="250" FontSize="13.333" MinHeight="50" Padding="0" />
+        <ComboBox x:Name="cbxCameraProfile" ItemTemplate="{StaticResource dtProfile}"                  
+                SelectionChanged="OnCameraProfileSelectionChanged"
+                HorizontalAlignment="Stretch" VerticalAlignment="Stretch" RelativePanel.AlignLeftWithPanel="True" 
+                RelativePanel.Below="cbxCamera" MinWidth="200" FontSize="13.333" MinHeight="50" Margin="0,5,0,0" Padding="0"/>
+        <TextBlock x:Name="textBlock2" TextWrapping="Wrap" Text="Microphone" RelativePanel.AlignLeftWithPanel="True" RelativePanel.Below="cbxCameraProfile" Margin="0,15,0,5" Foreground="White" FontSize="16"/>
+        <ComboBox x:Name="cbxMicrophone" ItemTemplate="{StaticResource dtDevice}" 
+                SelectionChanged="OnMicrophoneSelectionChanged"
+                HorizontalAlignment="Stretch" VerticalAlignment="Stretch" RelativePanel.AlignLeftWithPanel="True" 
+                RelativePanel.Below="textBlock2" MinWidth="200" FontSize="13.333" MinHeight="50" Padding="0" Margin="0"/>
+        <ComboBox x:Name="cbxMicrophoneProfile" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
+                ItemTemplate="{StaticResource dtProfile}"   SelectionChanged="OnMicrophoneProfileSelectionChanged"
+                RelativePanel.AlignLeftWithPanel="True" RelativePanel.Below="cbxMicrophone" MinWidth="200" 
+                FontSize="13.333" MinHeight="50" Margin="0,5,0,0" Padding="0"/>
+      </RelativePanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>
