@@ -194,7 +194,7 @@ namespace RTMPPublisher
       }
       catch (Exception Ex)
       {
-
+                System.Diagnostics.Debug.WriteLine("Error starting recording: {0}", Ex);
       }
     }
 
