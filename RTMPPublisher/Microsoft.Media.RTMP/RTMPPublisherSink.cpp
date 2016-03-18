@@ -571,7 +571,7 @@ void RTMPPublisherSink::Initialize(std::vector<PublishProfile^> targetProfiles,
         ComPtr<IMFAttributes> cpAttr;
         ThrowIfFailed(MFCreateAttributes(&cpAttr, 1U));
         cpAttr->SetUnknown(MF_SINK_WRITER_ASYNC_CALLBACK, profstate->DelegateSinkCallback.Get());
-        cpAttr->SetUINT32(MF_SINK_WRITER_DISABLE_THROTTLING, TRUE);
+        cpAttr->SetUINT32(MF_SINK_WRITER_DISABLE_THROTTLING, profstate->PublishProfile->DisableThrottling ? TRUE : FALSE);
         cpAttr->SetUINT32(MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, TRUE);
         cpAttr->SetUnknown(MF_SINK_WRITER_D3D_MANAGER, dxgimgr.Get());
 

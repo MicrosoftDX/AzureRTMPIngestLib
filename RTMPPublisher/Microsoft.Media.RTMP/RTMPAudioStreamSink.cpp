@@ -153,6 +153,7 @@ IFACEMETHODIMP RTMPAudioStreamSink::ProcessSample(IMFSample *pSample)
         ThrowIfFailed(NotifyStreamSinkRequestSample());
     }
 
+    
   }
   catch (const std::exception& ex)
   {
@@ -429,9 +430,9 @@ HRESULT RTMPAudioStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
   LONGLONG TSDelta = 0;
 
 
-  ComPtr<WorkItem> workitem;
-  ThrowIfFailed(pAsyncResult->GetState(&workitem));
-  // ComPtr<WorkItem> workitem((WorkItem*)pAsyncResult->GetStateNoAddRef());
+  //ComPtr<WorkItem> workitem;
+//  ThrowIfFailed(pAsyncResult->GetState(&workitem));
+   ComPtr<WorkItem> workitem((WorkItem*)pAsyncResult->GetStateNoAddRef());
   if (workitem == nullptr)
     throw E_INVALIDARG;
 
@@ -483,6 +484,11 @@ HRESULT RTMPAudioStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
         framepayload);
     }
 
+#if defined(_DEBUG)
+    LOG("Queued Audio Sample @ " << uiPTS << " - " << _streamsinkname);
+#endif
+
+
     if (SinkState::RUNNING)
       ThrowIfFailed(NotifyStreamSinkRequestSample());
   }
@@ -503,6 +509,8 @@ HRESULT RTMPAudioStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
 
     ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
   }
+
+  workitem.Reset();
   pAsyncResult->SetStatus(S_OK);
 
   return S_OK;

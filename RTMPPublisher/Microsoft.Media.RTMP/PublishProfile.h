@@ -221,6 +221,20 @@ namespace Microsoft
           }
         }
 
+        property bool DisableThrottling
+        {
+          bool get()
+          {
+            return _disableThrottling;
+          }
+          void set(bool val)
+          {
+            _disableThrottling = val;
+          }
+        }
+
+
+
         property MediaEncodingProfile^ TargetEncodingProfile
         {
           MediaEncodingProfile^ get()
@@ -284,6 +298,8 @@ namespace Microsoft
         unsigned int _baseEpoch = 0U;
 
         bool _enableLowLatency = false;
+
+        bool _disableThrottling = false;
       };
 
     }

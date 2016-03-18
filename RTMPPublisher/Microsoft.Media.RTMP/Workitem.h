@@ -87,6 +87,11 @@ namespace Microsoft
         {
         }
 
+        ~MediaSampleInfo()
+        {
+          if (_sample != nullptr)
+            _sample.Reset();
+        }
 
         ComPtr<IMFSample> GetSample()
         {
@@ -132,29 +137,7 @@ namespace Microsoft
           return retval;
         }
 
-        bool IsDiscontinous()
-        {
-          UINT32 ret = FALSE;
-          if (!(_sample == nullptr))
-          {
-            ThrowIfFailed(_sample->GetUINT32(MFSampleExtension_Discontinuity, &ret));
-          }
-          else
-            throw E_OUTOFMEMORY;
-
-          return (ret == TRUE);
-        }
-        void SetSampleDuration(LONGLONG val)
-        {
-          if (!(_sample == nullptr))
-          {
-            ThrowIfFailed(_sample->SetSampleDuration(val));
-          }
-          else
-            throw E_OUTOFMEMORY;
-
-          return;
-        }
+       
         bool IsKeyFrame()
         {
 
@@ -282,6 +265,12 @@ namespace Microsoft
         shared_ptr<WorkItemInfo> GetWorkItemInfo()
         {
           return _workitemInfo;
+        }
+
+        ~WorkItem()
+        {
+          if (_workitemInfo != nullptr)
+            _workitemInfo.reset();
         }
 
       private:

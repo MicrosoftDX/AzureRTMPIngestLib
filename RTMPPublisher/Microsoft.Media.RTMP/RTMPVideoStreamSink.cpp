@@ -177,7 +177,7 @@ IFACEMETHODIMP RTMPVideoStreamSink::ProcessSample(IMFSample *pSample)
       if (SinkState::RUNNING)
         ThrowIfFailed(NotifyStreamSinkRequestSample());
     }
-
+ 
   }
   catch (const std::exception& ex)
   {
@@ -597,9 +597,7 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
   std::lock_guard<std::recursive_mutex> lock(_lockSink);
 
 
-#if defined(_DEBUG)
-  LOG("Completing video sample - videosink:" << _streamsinkname);
-#endif
+ 
 
   if (!IsState(SinkState::RUNNING)) //drop the sample
   {
@@ -614,9 +612,9 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
   LONGLONG TSDelta = 0;
 
 
-  ComPtr<WorkItem> workitem;
-  ThrowIfFailed(pAsyncResult->GetState(&workitem));
-  //ComPtr<WorkItem> workitem((WorkItem*)pAsyncResult->GetStateNoAddRef());
+ /* ComPtr<WorkItem> workitem;
+  ThrowIfFailed(pAsyncResult->GetState(&workitem));*/
+  ComPtr<WorkItem> workitem((WorkItem*)pAsyncResult->GetStateNoAddRef());
   if (workitem == nullptr)
     throw E_INVALIDARG;
 
@@ -676,7 +674,7 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
 
 
 #if defined(_DEBUG)
-    LOG("Queued Sample @ " << uiDTS << " - " << _streamsinkname);
+    LOG("Queued Video Sample @ " << uiDTS << " - " << _streamsinkname);
 #endif
 
     if (SinkState::RUNNING)
@@ -702,7 +700,7 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
 
   }
 
-
+  workitem.Reset();
   return S_OK;
 }
 
