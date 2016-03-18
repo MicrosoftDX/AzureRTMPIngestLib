@@ -166,7 +166,7 @@ OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                           Style="{StaticResource AppBarToggleButtonStyle}" IsEnabled="False"
                           Grid.RowSpan="2" Grid.Row="0" Grid.Column="1" Width="Auto" MinWidth="48" MinHeight="48" Grid.ColumnSpan="1"/>
     </Grid>
-    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="7.5,7.5,0,0" Orientation="Horizontal">
+    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="7.5,7.5,0,0" Orientation="Horizontal" Background="#77000000">
       <AppBarButton Icon="Back"  x:Name="btnBack" Click="btnBack_Click" Foreground="Wheat"/>
       <TextBlock x:Name="tbChannel" Foreground="Wheat" FontSize="22" Margin="10,0,0,0"/>
       <TextBlock x:Name="tbClock" Foreground="Wheat" FontSize="22" Margin="10,0,0,0"/>
