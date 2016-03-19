@@ -146,13 +146,10 @@ IFACEMETHODIMP RTMPAudioStreamSink::ProcessSample(IMFSample *pSample)
         {
           continue;
         }
-      }
-
-
-      if (SinkState::RUNNING)
-        ThrowIfFailed(NotifyStreamSinkRequestSample());
+      } 
     }
-
+    if (SinkState::RUNNING)
+      ThrowIfFailed(NotifyStreamSinkRequestSample());
     
   }
   catch (const std::exception& ex)
@@ -223,6 +220,8 @@ IFACEMETHODIMP RTMPAudioStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
 
 
         ThrowIfFailed(BeginProcessNextWorkitem(wi));
+        ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
+
       }
     }
     else
@@ -248,9 +247,8 @@ IFACEMETHODIMP RTMPAudioStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
 
 
         SetState(SinkState::EOS);
-        LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio stream end of segment");
         NotifyStreamSinkMarker(markerInfo->GetContextValue());
-        // create_task([this]() { _mediasinkparent->StopPresentationClock(); });
+        LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio stream end of segment"); 
       }
       else
       {
@@ -271,11 +269,11 @@ IFACEMETHODIMP RTMPAudioStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
           }
         }
 
-
-
         ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
       }
     }
+   
+
   }
   catch (const std::exception& ex)
   {
@@ -470,13 +468,7 @@ HRESULT RTMPAudioStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
     {
 
       unsigned int uiPTSDelta = ToRTMPTimestamp(TSDelta);
-      auto framepayload = PreparePayload(sampleInfo, false);
-
-    /*  _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
-        RTMPMessageType::AUDIO,
-        uiPTSDelta,
-        framepayload,
-        true);*/
+      auto framepayload = PreparePayload(sampleInfo, false); 
 
       _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
         RTMPMessageType::AUDIO,
@@ -487,10 +479,7 @@ HRESULT RTMPAudioStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
 #if defined(_DEBUG)
     LOG("Queued Audio Sample @ " << uiPTS << " - " << _streamsinkname);
 #endif
-
-
-    if (SinkState::RUNNING)
-      ThrowIfFailed(NotifyStreamSinkRequestSample());
+ 
   }
   else //marker
   {
@@ -505,9 +494,7 @@ HRESULT RTMPAudioStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
       _lastOriginalPTS = tick;
 
     }
-
-
-    ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
+ 
   }
 
   workitem.Reset();

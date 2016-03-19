@@ -409,9 +409,9 @@ HRESULT RTMPStreamSinkBase::StreamSinkClockStart(MFTIME hnsSystemTime, LONGLONG 
     _clockStartOffset = llClockStartOffset;
     SetState(SinkState::RUNNING);
 
-    NotifyStreamSinkStarted();
+    ThrowIfFailed(NotifyStreamSinkStarted());
 
-    NotifyStreamSinkRequestSample();
+    ThrowIfFailed(NotifyStreamSinkRequestSample());
   }
   catch (const HRESULT& hr)
   {
@@ -426,7 +426,7 @@ HRESULT RTMPStreamSinkBase::StreamSinkClockStop(MFTIME hnsSystemTime)
   try
   {
     SetState(SinkState::STOPPED); 
-    NotifyStreamSinkStopped();
+    ThrowIfFailed(NotifyStreamSinkStopped());
   }
   catch (const HRESULT& hr)
   {

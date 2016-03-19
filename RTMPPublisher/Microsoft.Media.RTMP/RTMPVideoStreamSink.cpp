@@ -170,14 +170,11 @@ IFACEMETHODIMP RTMPVideoStreamSink::ProcessSample(IMFSample *pSample)
           LOG("Error sending video sample to sink writer");
           continue;
         }
-      }
-
-     
-
-      if (SinkState::RUNNING)
-        ThrowIfFailed(NotifyStreamSinkRequestSample());
+      } 
     }
  
+    if (SinkState::RUNNING)
+      ThrowIfFailed(NotifyStreamSinkRequestSample());
   }
   catch (const std::exception& ex)
   {
@@ -246,6 +243,8 @@ IFACEMETHODIMP RTMPVideoStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
           ));
 
         ThrowIfFailed(BeginProcessNextWorkitem(wi));
+
+        ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
       }
     }
     else
@@ -294,12 +293,14 @@ IFACEMETHODIMP RTMPVideoStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
           {
             continue;
           }
-        }
- 
+        } 
 
         ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
+        
       }
     }
+     
+    
 
   }
   catch (const std::exception& ex)
@@ -657,12 +658,7 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
       unsigned int uiTSDelta = ToRTMPTimestamp(TSDelta);
 
       auto framepayload = PreparePayload(sampleInfo, compositiontimeoffset, false);
-
-    /*  _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
-        RTMPMessageType::VIDEO,
-        uiTSDelta,
-        framepayload,
-        true);*/
+ 
 
       _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
         RTMPMessageType::VIDEO,
@@ -676,9 +672,7 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
 #if defined(_DEBUG)
     LOG("Queued Video Sample @ " << uiDTS << " - " << _streamsinkname);
 #endif
-
-    if (SinkState::RUNNING)
-      ThrowIfFailed(NotifyStreamSinkRequestSample());
+ 
   }
   else //marker
   {
@@ -694,10 +688,7 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
 
       _lastOriginalPTS = tick;
 
-    }
-
-    ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
-
+    } 
   }
 
   workitem.Reset();
