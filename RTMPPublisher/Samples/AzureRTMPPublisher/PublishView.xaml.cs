@@ -34,6 +34,7 @@ using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Navigation;
 using Microsoft.Media.RTMP;
+using Windows.System.Display;
 
 // The User Control item template is documented at http://go.microsoft.com/fwlink/?LinkId=234236
 
@@ -49,6 +50,7 @@ namespace RTMPPublisher
     TimeSpan sessionduration = TimeSpan.FromSeconds(0);
     System.Threading.Timer _clockTimer = null;
     LowLagMediaRecording _lowlagCapture = null;
+    DisplayRequest _displayRequest = null;
 
     public void SetTargetChannel(Channel c)
     {
@@ -99,6 +101,7 @@ namespace RTMPPublisher
       _deviceManager = (Application.Current as App).DeviceManager;
 
       await _deviceManager.InitializeAsync(ceSourcePreview);
+
       await StartPreviewAsync();
 
       if (e.Parameter != null && e.Parameter is Channel)
@@ -175,11 +178,17 @@ namespace RTMPPublisher
           await _lowlagCapture.StartAsync();
         }
         else
-        await _deviceManager.CurrentCapture.StartRecordToCustomSinkAsync(inputprof, sink);
+          await _deviceManager.CurrentCapture.StartRecordToCustomSinkAsync(inputprof, sink);
 
 
-
+        if(_displayRequest == null)
+        {
+          _displayRequest = new DisplayRequest();
+          _displayRequest.RequestActive();
+        }
         _deviceManager.IsPublishing = true;
+
+
         sessionduration = TimeSpan.FromSeconds(0);
         _clockTimer = new Timer(new TimerCallback((o) =>
           {
@@ -202,18 +211,31 @@ namespace RTMPPublisher
     {
       try
       {
+        if (_displayRequest != null)
+        {
+          _displayRequest.RequestRelease();
+          _displayRequest = null;
+        }
+
         if (_clockTimer != null)
+        {
           _clockTimer.Change(Timeout.Infinite, Timeout.Infinite);
-        _clockTimer = null;
-        tbClock.Text = "";
+          _clockTimer = null;
+          tbClock.Text = "";
+        }
+        
         btnStream.IsEnabled = false;
+
         if (_deviceManager.IsPublishing)
         {
           if (_deviceManager.EnableLowLatency && _lowlagCapture != null)
             await _lowlagCapture.FinishAsync();
           else
-          await _deviceManager.CurrentCapture.StopRecordAsync();
+            await _deviceManager.CurrentCapture.StopRecordAsync();
         }
+
+        _deviceManager.IsPreviewing = false;
+        await _deviceManager.CurrentCapture.StartPreviewAsync();
 
         await _deviceManager.SaveHistoryAsync();
       }

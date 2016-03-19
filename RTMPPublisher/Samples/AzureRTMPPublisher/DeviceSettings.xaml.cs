@@ -197,52 +197,7 @@ namespace RTMPPublisher
         OnDismissed(this, EventArgs.Empty);
     }
 
-    //public void OnClose()
-    //{
-    //  bool vidchanged = false;
-    //  bool audchanged = false;
-    //  DeviceWrapper dwCamera = null;
-    //  DeviceWrapper dwMicrophone = null;
-    //  EncodingPropertyWrapper vidprops = null;
-    //  EncodingPropertyWrapper audprops = null;
-    //  if (cbxCamera.SelectedValue != null && cbxCameraProfile.SelectedValue != null)
-    //  {
-    //    dwCamera = cbxCamera.SelectedValue as DeviceWrapper;
-    //    vidprops = (cbxCameraProfile.SelectedValue as EncodingPropertyWrapper);
-    //    var curprofile = Manager.CurrentCapture.VideoDeviceController.GetMediaStreamProperties(MediaStreamType.VideoRecord) as VideoEncodingProperties;
-    //    if ((Manager.CurrentCapture.MediaCaptureSettings.VideoDeviceId.ToLowerInvariant() == dwCamera.Info.Id.ToLowerInvariant() && vidprops.IsEqual(curprofile) == false) ||
-    //        (Manager.CurrentCapture.MediaCaptureSettings.VideoDeviceId.ToLowerInvariant() != dwCamera.Info.Id.ToLowerInvariant()))
-    //    {
-    //      vidchanged = true;
-    //    }
-    //  }
-    //  if (cbxMicrophone.SelectedValue != null && cbxMicrophoneProfile.SelectedValue != null)
-    //  {
-    //    dwMicrophone = cbxMicrophone.SelectedValue as DeviceWrapper;
-    //    audprops = (cbxMicrophoneProfile.SelectedValue as EncodingPropertyWrapper);
-    //    var curprofile = Manager.CurrentCapture.AudioDeviceController.GetMediaStreamProperties(MediaStreamType.Audio) as AudioEncodingProperties;
-    //    if ((Manager.CurrentCapture.MediaCaptureSettings.AudioDeviceId.ToLowerInvariant() == dwMicrophone.Info.Id.ToLowerInvariant() && audprops.IsEqual(curprofile) == false) ||
-    //        (Manager.CurrentCapture.MediaCaptureSettings.AudioDeviceId.ToLowerInvariant() != dwMicrophone.Info.Id.ToLowerInvariant()))
-    //    {
-    //      audchanged = true;
-    //    }
-    //  }
-
-    //  if (vidchanged && audchanged)
-    //  {
-    //    Manager.RestartCapturePreview(dwMicrophone.Info.Id, dwCamera.Info.Id, audprops.Data as AudioEncodingProperties, vidprops.Data as VideoEncodingProperties);
-    //  }
-    //  else if (vidchanged)
-    //  {
-    //    Manager.RestartCapturePreview(dwMicrophone.Info.Id, dwCamera.Info.Id, null, vidprops.Data as VideoEncodingProperties);
-    //  }
-    //  else if (audchanged)
-    //  {
-    //    Manager.RestartCapturePreview(dwMicrophone.Info.Id, dwCamera.Info.Id, audprops.Data as AudioEncodingProperties);
-    //  }
-
-    //}
-
+     
     private SessionManager _manager = null;
 
 
