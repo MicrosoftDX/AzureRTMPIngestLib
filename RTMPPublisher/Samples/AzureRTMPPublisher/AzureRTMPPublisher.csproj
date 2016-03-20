@@ -96,9 +96,6 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
-    <Content Include="ApplicationInsights.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
@@ -110,7 +107,6 @@
     <Compile Include="DeviceSettings.xaml.cs" />
     <Compile Include="Models.cs" />
     <Compile Include="OutputSettings.xaml.cs" />
-    <Compile Include="PlayerView.xaml.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PublishView.xaml.cs" />
     <Compile Include="SessionManager.cs" />
@@ -120,7 +116,6 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
-    <None Include="AzureRTMPPublisher_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Assets\sound.png" />
@@ -155,10 +150,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="PlayerView.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="PublishView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -169,21 +160,18 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <SDKReference Include="Microsoft RTMP Publish Library for Windows, Version=1.0.0.0">
-      <Name>Microsoft RTMP Publish Library for Windows</Name>
-    </SDKReference>
-    <SDKReference Include="Microsoft.PlayerFramework.Xaml.Adaptive.UWP, Version=3.0.0.4">
-      <Name>Microsoft Player Framework Adaptive Streaming Plugin</Name>
-    </SDKReference>
-    <SDKReference Include="Microsoft.PlayerFramework.Xaml.UWP, Version=3.0.0.4">
-      <Name>Microsoft Player Framework</Name>
-    </SDKReference>
     <SDKReference Include="Microsoft.VCLibs, Version=14.0">
       <Name>Visual C++ 2015 Runtime for Universal Windows Platform Apps</Name>
     </SDKReference>
     <SDKReference Include="Universal Smooth Streaming Client SDK, Version=1.0">
       <Name>Microsoft Universal Smooth Streaming Client SDK</Name>
     </SDKReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Microsoft.Media.RTMP\Microsoft.Media.RTMP.vcxproj">
+      <Project>{ddaf4d34-8057-4eb8-a7c8-be6052e204d3}</Project>
+      <Name>Microsoft.Media.RTMP</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>

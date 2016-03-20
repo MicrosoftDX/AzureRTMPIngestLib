@@ -32,8 +32,7 @@ OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     xmlns:local="using:RTMPPublisher"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:mmppf="using:Microsoft.PlayerFramework"
-    xmlns:pfadaptive="using:Microsoft.PlayerFramework.Adaptive"
+   
     mc:Ignorable="d"
     d:DesignHeight="300"
     d:DesignWidth="400">
@@ -58,15 +57,7 @@ OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
               </Setter.Value>
             </Setter>
             <Setter Value="Center" Target="gridMainButtons.VerticalAlignment"/>
-            <Setter Value="Right" Target="gridMainButtons.HorizontalAlignment"/>
-            <Setter Value="1" Target="btnPublish.(Grid.RowSpan)"/>
-            <Setter Value="1" Target="btnStream.(Grid.RowSpan)"/>
-            <Setter Value="2" Target="btnPublish.(Grid.ColumnSpan)"/>
-            <Setter Value="2" Target="btnStream.(Grid.ColumnSpan)"/>
-            <Setter Value="0" Target="btnPublish.(Grid.Row)"/>
-            <Setter Value="1" Target="btnStream.(Grid.Row)"/>
-            <Setter Value="0" Target="btnPublish.(Grid.Column)"/>
-            <Setter Value="0" Target="btnStream.(Grid.Column)"/>
+            <Setter Value="Right" Target="gridMainButtons.HorizontalAlignment"/>           
             <Setter Value="Right" Target="gridMainButtons.HorizontalAlignment"/>
             <Setter Target="btnPublish.(FrameworkElement.Margin)">
               <Setter.Value>
@@ -78,9 +69,7 @@ OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                 <Thickness>0,0,10,0</Thickness>
               </Setter.Value>
             </Setter>
-            <Setter Value="Bottom" Target="mpStreamPreview.VerticalAlignment"/>
-            <Setter Value="270" Target="mpStreamPreview.Height"/>
-            <Setter Value="480" Target="mpStreamPreview.Width"/>
+             
           </VisualState.Setters>
           <VisualState.StateTriggers>
             <AdaptiveTrigger MinWindowWidth="800"/>
@@ -132,13 +121,7 @@ OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
     <CaptureElement x:Name="ceSourcePreview" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-    <mmppf:MediaPlayer x:Name="mpStreamPreview" Visibility="Collapsed" AutoPlay="True" HorizontalAlignment="Right" VerticalAlignment="Top" 
-                       Margin="20"
-                       Width="320" Height="180">
-      <mmppf:MediaPlayer.Plugins>
-        <pfadaptive:AdaptivePlugin />
-      </mmppf:MediaPlayer.Plugins>
-    </mmppf:MediaPlayer>
+   
    
 
 
@@ -150,21 +133,11 @@ OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                   HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Click="btnSettings_Click" Grid.ColumnSpan="2"/>
 
     <Grid x:Name="gridMainButtons" HorizontalAlignment="Center" VerticalAlignment="Bottom" MinWidth="48" MinHeight="48" Margin="0,0,0,10">
-      <Grid.RowDefinitions>
-        <RowDefinition/>
-        <RowDefinition/>
-      </Grid.RowDefinitions>
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition/>
-        <ColumnDefinition/>
-      </Grid.ColumnDefinitions>
+     
       <AppBarToggleButton x:Name="btnPublish" Icon="Send" Label="" Foreground="White" 
     		HorizontalAlignment="Right" VerticalAlignment="Center" Checked="btnPublish_Checked" Unchecked="btnPublish_Unchecked" Style="{StaticResource AppBarToggleButtonStyle}" 
-                          Width="Auto" MinWidth="48" MinHeight="48" Margin="0,0,10,0" Grid.RowSpan="2" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="1"/>
-      <AppBarToggleButton x:Name="btnStream" Icon="Play" Label="" Foreground="White"
-      	HorizontalAlignment="Right" Margin="0" VerticalAlignment="Bottom" Checked="btnStream_Checked" Unchecked="btnStream_Unchecked" 
-                          Style="{StaticResource AppBarToggleButtonStyle}" IsEnabled="False"
-                          Grid.RowSpan="2" Grid.Row="0" Grid.Column="1" Width="Auto" MinWidth="48" MinHeight="48" Grid.ColumnSpan="1"/>
+                          Width="Auto" MinWidth="48" MinHeight="48" Margin="0,0,10,0"  />
+      
     </Grid>
     <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="7.5,7.5,0,0" Orientation="Horizontal">
       <AppBarButton Icon="Back"  x:Name="btnBack" Click="btnBack_Click" Foreground="Wheat"/>

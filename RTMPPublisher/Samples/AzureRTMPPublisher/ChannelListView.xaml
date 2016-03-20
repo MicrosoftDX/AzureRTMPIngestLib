@@ -30,9 +30,7 @@ OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:RTMPPublisher"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-  xmlns:mmppf="using:Microsoft.PlayerFramework"
-    xmlns:pfadaptive="using:Microsoft.PlayerFramework.Adaptive"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
     mc:Ignorable="d"
     d:DesignHeight="300"
     d:DesignWidth="400">
@@ -129,13 +127,7 @@ OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
               <Border BorderBrush="Black" BorderThickness="1.5" Grid.Column="2"  Margin="15,0,10,0"
               Visibility="{Binding Preview.IsStreaming,Converter={StaticResource boolToVisibilityConverter}}"  
                          HorizontalAlignment="Center" VerticalAlignment="Center" >
-                <mmppf:MediaPlayer x:Name="mpChannelPreview" AutoPlay="False" Stretch="UniformToFill"                                              
-                         Source="{Binding Preview.SmoothUri}"
-                       Width="256" Height="144">
-                  <mmppf:MediaPlayer.Plugins>
-                    <pfadaptive:AdaptivePlugin />
-                  </mmppf:MediaPlayer.Plugins>
-                </mmppf:MediaPlayer>
+              
               </Border>
             </Grid>
           </DataTemplate>

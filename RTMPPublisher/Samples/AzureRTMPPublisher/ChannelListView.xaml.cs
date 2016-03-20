@@ -46,12 +46,12 @@ namespace RTMPPublisher
 
     Timer _refreshTimer = null;
     public event ChannelSelectHandler Publish;
-    public event ChannelSelectHandler Playback; 
+    public event ChannelSelectHandler Playback;
 
     public ChannelListView()
     {
       this.InitializeComponent();
-     
+
       Loaded += ChannelListView_Loaded;
     }
 
@@ -62,7 +62,7 @@ namespace RTMPPublisher
          foreach (var chnl in _channels)
            _amswrapper.CheckChannelStatusAsync(chnl);
        });
-    
+
     }
 
     private async void ChannelListView_Loaded(object sender, RoutedEventArgs e)
@@ -72,9 +72,9 @@ namespace RTMPPublisher
 
       await _amswrapper.LoadCredentialsAsync();
 
-      if (_amswrapper.Credentials == null || !(await LoadChannelListAsync()))  
-        gridCreds.Visibility = Visibility.Visible; 
-      
+      if (_amswrapper.Credentials == null || !(await LoadChannelListAsync()))
+        gridCreds.Visibility = Visibility.Visible;
+
     }
 
     private async System.Threading.Tasks.Task<bool> LoadChannelListAsync()
@@ -84,7 +84,7 @@ namespace RTMPPublisher
       bool auth = await _amswrapper.AuthorizeAsync();
       if (!auth)
       {
-        
+
         gridLoading.Visibility = Visibility.Collapsed;
         return false;
       }
@@ -110,21 +110,16 @@ namespace RTMPPublisher
       if (c.State.ToLowerInvariant() != "running") return;
 
       TrackRefresh(false);
-     
-      if(c.Preview.IsStreaming)//playback
-      {
-        this.Frame.Navigate(typeof(PlayerView), c);
-      }
-      else//publish
-      {
-        await _amswrapper.CheckChannelStatusAsync(c,true);
-        this.Frame.Navigate(typeof(PublishView), c);
-      }
+
+
+      await _amswrapper.CheckChannelStatusAsync(c, true);
+      this.Frame.Navigate(typeof(PublishView), c);
+
     }
 
     public void TrackRefresh(bool State)
     {
-      if(State)
+      if (State)
       {
         _refreshTimer = new Timer(new TimerCallback(this._refreshTimer_Tick), null, 1000, 8000);
       }
@@ -139,17 +134,17 @@ namespace RTMPPublisher
     {
       Channel c = (sender as Button).DataContext as Channel;
       (Application.Current as App).DeviceManager.AddIngestURLToHistory(c.Input.Endpoints[0].Url, "AZURE", 0, 0);
-      await _amswrapper.ResetAsync(c,this.Dispatcher);      
+      await _amswrapper.ResetAsync(c, this.Dispatcher);
       return;
     }
 
     private async void btnLoad_Click(object sender, RoutedEventArgs e)
     {
-      gridCreds.Visibility = Visibility.Collapsed;   
+      gridCreds.Visibility = Visibility.Collapsed;
       _amswrapper.Credentials = new Creds() { AccountName = tbxacctname.Text, AccountKey = tbxacctkey.Text };
-      if(await LoadChannelListAsync())
+      if (await LoadChannelListAsync())
       {
-        _amswrapper.SaveCredentialsAsync(_amswrapper.Credentials.AccountName, _amswrapper.Credentials.AccountKey);        
+        _amswrapper.SaveCredentialsAsync(_amswrapper.Credentials.AccountName, _amswrapper.Credentials.AccountKey);
       }
       else
       {
@@ -163,12 +158,12 @@ namespace RTMPPublisher
       gridChannels.Visibility = Visibility.Collapsed;
       gridInitialLoad.Visibility = Visibility.Visible;
       gridCreds.Visibility = Visibility.Visible;
-      if(_amswrapper.Credentials != null)
+      if (_amswrapper.Credentials != null)
       {
         tbxacctname.Text = _amswrapper.Credentials.AccountName;
         tbxacctkey.Text = _amswrapper.Credentials.AccountKey;
       }
-      
+
     }
   }
 

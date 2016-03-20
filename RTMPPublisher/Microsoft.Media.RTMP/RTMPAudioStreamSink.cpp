@@ -126,6 +126,10 @@ IFACEMETHODIMP RTMPAudioStreamSink::ProcessSample(IMFSample *pSample)
         ));
 
       ThrowIfFailed(BeginProcessNextWorkitem(wi));
+
+#if defined(_DEBUG)
+      LOG("Dispatched audio sample - " << _streamsinkname);
+#endif
     }
     else
     {

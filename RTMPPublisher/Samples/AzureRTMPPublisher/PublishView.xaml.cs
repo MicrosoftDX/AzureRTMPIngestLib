@@ -101,7 +101,6 @@ namespace RTMPPublisher
       _deviceManager = (Application.Current as App).DeviceManager;
 
       await _deviceManager.InitializeAsync(ceSourcePreview);
-
       await StartPreviewAsync();
 
       if (e.Parameter != null && e.Parameter is Channel)
@@ -196,8 +195,7 @@ namespace RTMPPublisher
              {
                sessionduration = sessionduration.Add(TimeSpan.FromMilliseconds(500));
                tbClock.Text = sessionduration.ToString(@"hh\:mm\:ss\:fff");
-               if (sessionduration.Seconds >= 30) //need at least 30 seconds of content published before streaming
-                 btnStream.IsEnabled = true;
+               
              });
           }), null, 0, 500);
       }
@@ -222,9 +220,7 @@ namespace RTMPPublisher
           _clockTimer.Change(Timeout.Infinite, Timeout.Infinite);
           _clockTimer = null;
           tbClock.Text = "";
-        }
-        
-        btnStream.IsEnabled = false;
+        } 
 
         if (_deviceManager.IsPublishing)
         {
@@ -247,39 +243,7 @@ namespace RTMPPublisher
       _deviceManager.IsPublishing = false;
     }
 
-    private async void btnStream_Checked(object sender, RoutedEventArgs e)
-    {
-      try
-      {
-        if (_deviceManager.StreamType == "DASH" || _deviceManager.StreamType == "HLS")
-        {
-          var result = await AdaptiveMediaSource.CreateFromUriAsync(new Uri(_deviceManager.StreamURL));
-          if (result.Status == AdaptiveMediaSourceCreationStatus.Success)
-          {
-            mpStreamPreview.SetMediaStreamSource(result.MediaSource);
-          }
-        }
-        else
-        {
-          mpStreamPreview.Source = new Uri(_deviceManager.StreamURL);
-        }
-
-        mpStreamPreview.Visibility = Visibility.Visible;
-
-
-      }
-      catch
-      {
-
-      }
-    }
-
-    private void btnStream_Unchecked(object sender, RoutedEventArgs e)
-    {
-      mpStreamPreview.Stop();
-      mpStreamPreview.Source = null;
-      mpStreamPreview.Visibility = Visibility.Collapsed;
-    }
+   
 
     private void SettingsDismiss_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
@@ -293,8 +257,6 @@ namespace RTMPPublisher
       ccOutputSettings.OnClose();
       VisualStateManager.GoToState(this, "HideSettings", true);
     }
-
-
     public async Task StartPreviewAsync()
     {
       if (_deviceManager.IsPreviewing == false)
@@ -307,6 +269,8 @@ namespace RTMPPublisher
       if (ccOutputSettings.Manager == null)
         ccOutputSettings.Manager = _deviceManager;
     }
+
+
 
 
     private async void OnSessionClosed(RTMPPublishSession sender, SessionClosedEventArgs args)
@@ -323,9 +287,7 @@ namespace RTMPPublisher
         catch
         {
 
-        }
-        btnStream.IsChecked = false;
-
+        } 
       }));
     }
 

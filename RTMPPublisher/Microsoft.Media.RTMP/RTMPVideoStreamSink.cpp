@@ -143,7 +143,7 @@ IFACEMETHODIMP RTMPVideoStreamSink::ProcessSample(IMFSample *pSample)
       ThrowIfFailed(BeginProcessNextWorkitem(wi));
 
 #if defined(_DEBUG)
-      LOG("Dispatched video sample - videosink:"<<_streamsinkname);
+      LOG("Dispatched video sample - "<<_streamsinkname);
 #endif
     }
     else
