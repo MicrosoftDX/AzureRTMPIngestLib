@@ -68,7 +68,7 @@ HRESULT RTMPAudioStreamSink::CreateMediaType(MediaEncodingProfile^ encodingProfi
     {
       ThrowIfFailed(_currentMediaType->SetUINT32(MF_MT_AAC_PAYLOAD_TYPE, 0));
 
-      _sampleInterval = (LONGLONG) round(10000000 / ((encodingProfile->Audio->SampleRate) / 1000));
+      _sampleInterval = (LONGLONG)round(10000000 / ((encodingProfile->Audio->SampleRate) / 1000));
     }
 
 
@@ -130,16 +130,12 @@ IFACEMETHODIMP RTMPAudioStreamSink::ProcessSample(IMFSample *pSample)
 #if defined(_DEBUG)
       LOG("Dispatched audio sample - " << _streamsinkname);
 #endif
-
-      if (SinkState::RUNNING && _mediasinkparent->IsAggregated() == false)
-        ThrowIfFailed(NotifyStreamSinkRequestSample());
     }
     else
     {
-      auto msi = make_shared<MediaSampleInfo>(ContentType::AUDIO,
-        pSample);
+      
       //LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio Sample : Original PTS = " << (unsigned int) round(msi->GetSampleTimestamp() * TICKSTOMILLIS)
-        //);
+      //);
       for (auto profstate : _targetProfileStates)
       {
         DWORD sinkidx = 0;
@@ -153,13 +149,11 @@ IFACEMETHODIMP RTMPAudioStreamSink::ProcessSample(IMFSample *pSample)
         {
           continue;
         }
-      } 
-
-      if (SinkState::RUNNING)
-        ThrowIfFailed(NotifyStreamSinkRequestSample());
+      }
     }
-    
-    
+    if (SinkState::RUNNING)
+      ThrowIfFailed(NotifyStreamSinkRequestSample());
+
   }
   catch (const std::exception& ex)
   {
@@ -229,9 +223,7 @@ IFACEMETHODIMP RTMPAudioStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
 
 
         ThrowIfFailed(BeginProcessNextWorkitem(wi));
-
-        if(_mediasinkparent->IsAggregated() == false)
-          ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
+        ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
 
       }
     }
@@ -259,7 +251,7 @@ IFACEMETHODIMP RTMPAudioStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
 
         SetState(SinkState::EOS);
         NotifyStreamSinkMarker(markerInfo->GetContextValue());
-        LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio stream end of segment"); 
+        LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio stream end of segment");
       }
       else
       {
@@ -283,7 +275,7 @@ IFACEMETHODIMP RTMPAudioStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
         ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
       }
     }
-   
+
 
   }
   catch (const std::exception& ex)
@@ -326,21 +318,21 @@ std::vector<BYTE> RTMPAudioStreamSink::PreparePayload(MediaSampleInfo* pSampleIn
   {
     //we add AACPacketType == 0, AudioSpecificConfig
     auto audioconfigrecord = MakeAudioSpecificConfig(pSampleInfo);
-    retval.push_back((BYTE) 0);
+    retval.push_back((BYTE)0);
     auto oldsize = retval.size();
     retval.resize(oldsize + audioconfigrecord.size());
-    memcpy_s(&(*(retval.begin() + oldsize)), (unsigned int) audioconfigrecord.size(), &(*(audioconfigrecord.begin())), (unsigned int) audioconfigrecord.size());
+    memcpy_s(&(*(retval.begin() + oldsize)), (unsigned int)audioconfigrecord.size(), &(*(audioconfigrecord.begin())), (unsigned int)audioconfigrecord.size());
   }
   else
   {
     //we add AACPacketType == 1,and AAC Frame Data
-    retval.push_back((BYTE) 1);
+    retval.push_back((BYTE)1);
 
     auto frames = pSampleInfo->GetSampleData();//we get raw aac frames per our output media type setting
 
     auto oldsize = retval.size();
     retval.resize(oldsize + frames.size());
-    memcpy_s(&(*(retval.begin() + oldsize)), (unsigned int) frames.size(), &(*(frames.begin())), (unsigned int) frames.size());
+    memcpy_s(&(*(retval.begin() + oldsize)), (unsigned int)frames.size(), &(*(frames.begin())), (unsigned int)frames.size());
   }
   return retval;
 }
@@ -365,10 +357,10 @@ void RTMPAudioStreamSink::PrepareTimestamps(MediaSampleInfo* sampleInfo, LONGLON
   TSDelta = PTS - _lastPTS;
   _lastPTS = PTS;
 
-  /*LOG("AudioStreamSink" << (IsAggregating() ? "(Agg)" : "") 
-    << "::PTS = "<< "[" << _lastOriginalPTS << "] "<< ToRTMPTimestamp(_lastOriginalPTS)
-    << ",C. PTS = "<< "[" << PTS << "] " << ToRTMPTimestamp(PTS)
-    << ", Size = "<< sampleInfo->GetTotalDataLength() << " bytes");*/
+  /*LOG("AudioStreamSink" << (IsAggregating() ? "(Agg)" : "")
+  << "::PTS = "<< "[" << _lastOriginalPTS << "] "<< ToRTMPTimestamp(_lastOriginalPTS)
+  << ",C. PTS = "<< "[" << PTS << "] " << ToRTMPTimestamp(PTS)
+  << ", Size = "<< sampleInfo->GetTotalDataLength() << " bytes");*/
 }
 
 std::vector<BYTE> RTMPAudioStreamSink::MakeAudioSpecificConfig(MediaSampleInfo* pSampleInfo)
@@ -383,7 +375,7 @@ std::vector<BYTE> RTMPAudioStreamSink::MakeAudioSpecificConfig(MediaSampleInfo* 
     unsigned int blobsize = 0;
     ThrowIfFailed(_currentMediaType->GetBlobSize(MF_MT_USER_DATA, &blobsize));
     tempval.resize(blobsize);
-    ThrowIfFailed(_currentMediaType->GetBlob(MF_MT_USER_DATA, &(*(tempval.begin())), (unsigned int) tempval.size(), &blobsize));
+    ThrowIfFailed(_currentMediaType->GetBlob(MF_MT_USER_DATA, &(*(tempval.begin())), (unsigned int)tempval.size(), &blobsize));
 
     //this corrsponds to the portion of HEAACWAVEINFO past the WAVEFORMATEX (wfx) member. So we drop the next 5 members (payload type (WORD), profile level ind(WORD), struct type(WORD), reserved1(WORD) and reserved 2(DWORD)) and take the rest - this will be the audiospecificconfig 
     //see 
@@ -411,7 +403,7 @@ std::vector<BYTE> RTMPAudioStreamSink::MakeAudioSpecificConfig(MediaSampleInfo* 
   else
     SFI_CC = (0x4 << 4);//assume sampling frequency index for 44.1 khz = 0x4
 
-  SFI_CC |= (BYTE) _mediasinkparent->GetProfileState()->PublishProfile->TargetEncodingProfile->Audio->ChannelCount;
+  SFI_CC |= (BYTE)_mediasinkparent->GetProfileState()->PublishProfile->TargetEncodingProfile->Audio->ChannelCount;
 
   BYTE gaSpecificConfig = 0x0; //frame length flag = 0 for frame length = 1024 PCM samples per ISO 14496-3,all other fields are zero as well
 
@@ -440,8 +432,8 @@ HRESULT RTMPAudioStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
 
 
   //ComPtr<WorkItem> workitem;
-//  ThrowIfFailed(pAsyncResult->GetState(&workitem));
-   ComPtr<WorkItem> workitem((WorkItem*)pAsyncResult->GetStateNoAddRef());
+  //  ThrowIfFailed(pAsyncResult->GetState(&workitem));
+  ComPtr<WorkItem> workitem((WorkItem*)pAsyncResult->GetStateNoAddRef());
   if (workitem == nullptr)
     throw E_INVALIDARG;
 
@@ -479,7 +471,7 @@ HRESULT RTMPAudioStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
     {
 
       unsigned int uiPTSDelta = ToRTMPTimestamp(TSDelta);
-      auto framepayload = PreparePayload(sampleInfo, false); 
+      auto framepayload = PreparePayload(sampleInfo, false);
 
       _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
         RTMPMessageType::AUDIO,
@@ -490,7 +482,7 @@ HRESULT RTMPAudioStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
 #if defined(_DEBUG)
     LOG("Queued Audio Sample @ " << uiPTS << " - " << _streamsinkname);
 #endif
- 
+
   }
   else //marker
   {
@@ -505,7 +497,7 @@ HRESULT RTMPAudioStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
       _lastOriginalPTS = tick;
 
     }
- 
+
   }
 
   workitem.Reset();

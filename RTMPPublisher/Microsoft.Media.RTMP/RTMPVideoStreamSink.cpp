@@ -145,18 +145,12 @@ IFACEMETHODIMP RTMPVideoStreamSink::ProcessSample(IMFSample *pSample)
 #if defined(_DEBUG)
       LOG("Dispatched video sample - " << _streamsinkname);
 #endif
-
-      if (SinkState::RUNNING && _mediasinkparent->IsAggregated() == false)
-        ThrowIfFailed(NotifyStreamSinkRequestSample());
     }
     else
-    {
-
-      auto msi = make_shared<MediaSampleInfo>(ContentType::VIDEO,
-        pSample);
+    { 
 
       /* LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video Sample : Original PTS = " << (unsigned int) round(msi->GetSampleTimestamp() * TICKSTOMILLIS)
-         << ", Original DTS = " << (unsigned int) round(msi->GetDecodeTimestamp() * TICKSTOMILLIS));*/
+      << ", Original DTS = " << (unsigned int) round(msi->GetDecodeTimestamp() * TICKSTOMILLIS));*/
 
       for (auto profstate : _targetProfileStates)
       {
@@ -174,12 +168,10 @@ IFACEMETHODIMP RTMPVideoStreamSink::ProcessSample(IMFSample *pSample)
           continue;
         }
       }
-
-      if (SinkState::RUNNING)
-        ThrowIfFailed(NotifyStreamSinkRequestSample());
     }
 
-
+    if (SinkState::RUNNING)
+      ThrowIfFailed(NotifyStreamSinkRequestSample());
   }
   catch (const std::exception& ex)
   {
@@ -247,9 +239,9 @@ IFACEMETHODIMP RTMPVideoStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
           markerInfo
           ));
 
-        ThrowIfFailed(BeginProcessNextWorkitem(wi)); 
-        if (_mediasinkparent->IsAggregated() == false)
-          ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
+        ThrowIfFailed(BeginProcessNextWorkitem(wi));
+
+        ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
       }
     }
     else
@@ -279,7 +271,7 @@ IFACEMETHODIMP RTMPVideoStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
         NotifyStreamSinkMarker(markerInfo->GetContextValue());
 
         //if aggregating - the sink will call this on the aggregating parent
-      //  create_task([this]() { _mediasinkparent->StopPresentationClock(); });
+        //  create_task([this]() { _mediasinkparent->StopPresentationClock(); });
       }
       else
       {
@@ -421,72 +413,72 @@ void RTMPVideoStreamSink::PrepareTimestamps(MediaSampleInfo* sampleInfo, LONGLON
   _lastDTS = DTS;
 
   /* LOG("VideoStreamSink" << (IsAggregating() ? "(Agg)" : "")
-     << ":: PTS = " << "[" <<_lastOriginalPTS << "] "<<ToRTMPTimestamp(_lastOriginalPTS)
-     << ", DTS = " << "[" << _lastOriginalDTS << "] " << ToRTMPTimestamp(_lastOriginalDTS)
-     << ", D. PTS = " << "[" << PTS << "] " << ToRTMPTimestamp(PTS)
-     << ", D. DTS = " << "[" << DTS << "] " << ToRTMPTimestamp(DTS)
-     << ", Delta = " << "[" << TSDelta << "] " << ToRTMPTimestamp(TSDelta)
-     << ", C. Offset = " << "[" << PTS - DTS << "] " << ToRTMPTimestamp(PTS - DTS)
-     << ", Size = " << sampleInfo->GetTotalDataLength() << " bytes"
-     );*/
+  << ":: PTS = " << "[" <<_lastOriginalPTS << "] "<<ToRTMPTimestamp(_lastOriginalPTS)
+  << ", DTS = " << "[" << _lastOriginalDTS << "] " << ToRTMPTimestamp(_lastOriginalDTS)
+  << ", D. PTS = " << "[" << PTS << "] " << ToRTMPTimestamp(PTS)
+  << ", D. DTS = " << "[" << DTS << "] " << ToRTMPTimestamp(DTS)
+  << ", Delta = " << "[" << TSDelta << "] " << ToRTMPTimestamp(TSDelta)
+  << ", C. Offset = " << "[" << PTS - DTS << "] " << ToRTMPTimestamp(PTS - DTS)
+  << ", Size = " << sampleInfo->GetTotalDataLength() << " bytes"
+  );*/
 }
 
 /*
 void RTMPVideoStreamSink::PrepareTimestamps(MediaSampleInfo* sampleInfo, LONGLONG& PTS, LONGLONG& DTS, LONGLONG& TSDelta)
 {
-  _lastOriginalDTS = sampleInfo->GetDecodeTimestamp();
-  _lastOriginalPTS = sampleInfo->GetSampleTimestamp();
-  if (_lastOriginalDTS < 0)
-    _lastOriginalDTS = _lastOriginalPTS;
+_lastOriginalDTS = sampleInfo->GetDecodeTimestamp();
+_lastOriginalPTS = sampleInfo->GetSampleTimestamp();
+if (_lastOriginalDTS < 0)
+_lastOriginalDTS = _lastOriginalPTS;
 
-  if (_startPTS < 0) //first video sample
-  {
+if (_startPTS < 0) //first video sample
+{
 
-    if (_publishparams->VideoTimestampBase > 0) //we are trying to continue from a previous publish effort
-    {
-      DTS = _publishparams->VideoTimestampBase + _sampleInterval;
-      PTS = _publishparams->VideoTimestampBase + _sampleInterval;
-    }
-    else
-    {
-      //if video timestamp does not start at clock start - we offset it to start at clock start
-      if (_lastOriginalDTS > _clockStartOffset)
-        DTS = _clockStartOffset;
-      else
-        DTS = _lastOriginalDTS;
+if (_publishparams->VideoTimestampBase > 0) //we are trying to continue from a previous publish effort
+{
+DTS = _publishparams->VideoTimestampBase + _sampleInterval;
+PTS = _publishparams->VideoTimestampBase + _sampleInterval;
+}
+else
+{
+//if video timestamp does not start at clock start - we offset it to start at clock start
+if (_lastOriginalDTS > _clockStartOffset)
+DTS = _clockStartOffset;
+else
+DTS = _lastOriginalDTS;
 
-      PTS = _lastOriginalPTS;
-    }
-    _startPTS = PTS;
+PTS = _lastOriginalPTS;
+}
+_startPTS = PTS;
 
-  }
-  else
-  {
-    if (_gaplength > 0)
-    {
-      DTS = _lastDTS + _sampleInterval;
-      PTS = _lastPTS + _sampleInterval + _gaplength;
-      _gaplength = 0;
-    }
-    else
-    {
-      DTS = _lastDTS + _sampleInterval;
-      PTS = _lastPTS + _sampleInterval;
-    }
+}
+else
+{
+if (_gaplength > 0)
+{
+DTS = _lastDTS + _sampleInterval;
+PTS = _lastPTS + _sampleInterval + _gaplength;
+_gaplength = 0;
+}
+else
+{
+DTS = _lastDTS + _sampleInterval;
+PTS = _lastPTS + _sampleInterval;
+}
 
-  }
+}
 
-  TSDelta = DTS - _lastDTS;
-  _lastPTS = PTS;
-  _lastDTS = DTS;
+TSDelta = DTS - _lastDTS;
+_lastPTS = PTS;
+_lastDTS = DTS;
 
-  LOG("Video Sample : Original PTS = " << (unsigned int)round(_lastOriginalPTS * TICKSTOMILLIS)
-    << ", Original DTS = " << (unsigned int)round(_lastOriginalDTS * TICKSTOMILLIS)
-    << ", Derived PTS = " << (unsigned int)round(PTS * TICKSTOMILLIS)
-    << ", Derived DTS = " << (unsigned int)round(DTS * TICKSTOMILLIS)
-    << ", Composition Offset = " << (unsigned int)round((PTS - DTS) * TICKSTOMILLIS)
-    << ", Gap Length = " << (unsigned int)round(_gaplength * TICKSTOMILLIS)
-    );
+LOG("Video Sample : Original PTS = " << (unsigned int)round(_lastOriginalPTS * TICKSTOMILLIS)
+<< ", Original DTS = " << (unsigned int)round(_lastOriginalDTS * TICKSTOMILLIS)
+<< ", Derived PTS = " << (unsigned int)round(PTS * TICKSTOMILLIS)
+<< ", Derived DTS = " << (unsigned int)round(DTS * TICKSTOMILLIS)
+<< ", Composition Offset = " << (unsigned int)round((PTS - DTS) * TICKSTOMILLIS)
+<< ", Gap Length = " << (unsigned int)round(_gaplength * TICKSTOMILLIS)
+);
 }
 */
 
@@ -600,10 +592,7 @@ std::vector<BYTE> RTMPVideoStreamSink::MakeAVCSample(MediaSampleInfo* pSampleInf
 
 HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncResult)
 {
-  std::lock_guard<std::recursive_mutex> lock(_lockSink);
-
-
-
+  std::lock_guard<std::recursive_mutex> lock(_lockSink); 
 
   if (!IsState(SinkState::RUNNING)) //drop the sample
   {
@@ -619,7 +608,7 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
 
 
   /* ComPtr<WorkItem> workitem;
-   ThrowIfFailed(pAsyncResult->GetState(&workitem));*/
+  ThrowIfFailed(pAsyncResult->GetState(&workitem));*/
   ComPtr<WorkItem> workitem((WorkItem*)pAsyncResult->GetStateNoAddRef());
   if (workitem == nullptr)
     throw E_INVALIDARG;
@@ -697,6 +686,7 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
   }
 
   workitem.Reset();
+  pAsyncResult->SetStatus(S_OK);
   return S_OK;
 }
 
