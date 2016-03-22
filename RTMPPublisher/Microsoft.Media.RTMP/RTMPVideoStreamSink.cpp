@@ -74,7 +74,7 @@ HRESULT RTMPVideoStreamSink::CreateMediaType(MediaEncodingProfile^ encodingProfi
 
     if (!IsAggregating())
     {
-      _sampleInterval = (LONGLONG) round(10000000 / (encodingProfile->Video->FrameRate->Numerator / encodingProfile->Video->FrameRate->Denominator));
+      _sampleInterval = (LONGLONG)round(10000000 / (encodingProfile->Video->FrameRate->Numerator / encodingProfile->Video->FrameRate->Denominator));
 
       ThrowIfFailed(_currentMediaType->SetUINT32(CODECAPI_AVEncMPVGOPSize, _targetProfileStates[0]->PublishProfile->KeyFrameInterval));
     }
@@ -84,7 +84,7 @@ HRESULT RTMPVideoStreamSink::CreateMediaType(MediaEncodingProfile^ encodingProfi
 
 
 #if defined(_DEBUG)
-    _streamsinkname = L"videosink:" + to_wstring((int) encodingProfile->Video->Bitrate);
+    _streamsinkname = L"videosink:" + to_wstring((int)encodingProfile->Video->Bitrate);
 #endif
 
     LOG("Video media type created")
@@ -143,8 +143,11 @@ IFACEMETHODIMP RTMPVideoStreamSink::ProcessSample(IMFSample *pSample)
       ThrowIfFailed(BeginProcessNextWorkitem(wi));
 
 #if defined(_DEBUG)
-      LOG("Dispatched video sample - "<<_streamsinkname);
+      LOG("Dispatched video sample - " << _streamsinkname);
 #endif
+
+      if (SinkState::RUNNING && _mediasinkparent->IsAggregated() == false)
+        ThrowIfFailed(NotifyStreamSinkRequestSample());
     }
     else
     {
@@ -152,8 +155,8 @@ IFACEMETHODIMP RTMPVideoStreamSink::ProcessSample(IMFSample *pSample)
       auto msi = make_shared<MediaSampleInfo>(ContentType::VIDEO,
         pSample);
 
-     /* LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video Sample : Original PTS = " << (unsigned int) round(msi->GetSampleTimestamp() * TICKSTOMILLIS)
-        << ", Original DTS = " << (unsigned int) round(msi->GetDecodeTimestamp() * TICKSTOMILLIS));*/
+      /* LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video Sample : Original PTS = " << (unsigned int) round(msi->GetSampleTimestamp() * TICKSTOMILLIS)
+         << ", Original DTS = " << (unsigned int) round(msi->GetDecodeTimestamp() * TICKSTOMILLIS));*/
 
       for (auto profstate : _targetProfileStates)
       {
@@ -170,11 +173,13 @@ IFACEMETHODIMP RTMPVideoStreamSink::ProcessSample(IMFSample *pSample)
           LOG("Error sending video sample to sink writer");
           continue;
         }
-      } 
+      }
+
+      if (SinkState::RUNNING)
+        ThrowIfFailed(NotifyStreamSinkRequestSample());
     }
- 
-    if (SinkState::RUNNING)
-      ThrowIfFailed(NotifyStreamSinkRequestSample());
+
+
   }
   catch (const std::exception& ex)
   {
@@ -229,9 +234,9 @@ IFACEMETHODIMP RTMPVideoStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
 
       if (markerInfo->GetMarkerType() == MFSTREAMSINK_MARKER_TYPE::MFSTREAMSINK_MARKER_ENDOFSEGMENT)
       {
-        
+
         SetState(SinkState::EOS);
-        LOG("VideoStreamSink"<<(IsAggregating() ? "(Aggregating)" : "")<<"::Video stream end of segment");
+        LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video stream end of segment");
         NotifyStreamSinkMarker(markerInfo->GetContextValue());
         create_task([this]() { _mediasinkparent->StopPresentationClock(); });
       }
@@ -242,9 +247,9 @@ IFACEMETHODIMP RTMPVideoStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
           markerInfo
           ));
 
-        ThrowIfFailed(BeginProcessNextWorkitem(wi));
-
-        ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
+        ThrowIfFailed(BeginProcessNextWorkitem(wi)); 
+        if (_mediasinkparent->IsAggregated() == false)
+          ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
       }
     }
     else
@@ -266,9 +271,9 @@ IFACEMETHODIMP RTMPVideoStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
             continue;
           }
         }
- 
 
-      
+
+
         SetState(SinkState::EOS);
         LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video stream end of segment");
         NotifyStreamSinkMarker(markerInfo->GetContextValue());
@@ -293,14 +298,14 @@ IFACEMETHODIMP RTMPVideoStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
           {
             continue;
           }
-        } 
+        }
 
         ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
-        
+
       }
     }
-     
-    
+
+
 
   }
   catch (const std::exception& ex)
@@ -341,23 +346,23 @@ std::vector<BYTE> RTMPVideoStreamSink::PreparePayload(MediaSampleInfo* pSampleIn
   {
     //we add AVCPacketType == 0, composition time offset = 0, and decoder config record
     auto decoderconfigrecord = MakeDecoderConfigRecord(pSampleInfo);
-    BitOp::AddToBitstream((BYTE) 0, retval, false);
-    BitOp::AddToBitstream<unsigned int>((unsigned int) 0, retval, true, 3);
+    BitOp::AddToBitstream((BYTE)0, retval, false);
+    BitOp::AddToBitstream<unsigned int>((unsigned int)0, retval, true, 3);
 
     auto oldsize = retval.size();
     retval.resize(oldsize + decoderconfigrecord.size());
-    memcpy_s(&(*(retval.begin() + oldsize)), (unsigned int) decoderconfigrecord.size(), &(*(decoderconfigrecord.begin())), (unsigned int) decoderconfigrecord.size());
+    memcpy_s(&(*(retval.begin() + oldsize)), (unsigned int)decoderconfigrecord.size(), &(*(decoderconfigrecord.begin())), (unsigned int)decoderconfigrecord.size());
   }
   else
   {
     //we add AVCPacketType == 1, composition time offset (3 bytes), and NALU's
-    BitOp::AddToBitstream((BYTE) 1, retval, false);
+    BitOp::AddToBitstream((BYTE)1, retval, false);
     BitOp::AddToBitstream<unsigned int>(compositionTimeOffset, retval, true, 3);
 
     auto sample = MakeAVCSample(pSampleInfo);
     auto oldsize = retval.size();
     retval.resize(oldsize + sample.size());
-    memcpy_s(&(*(retval.begin() + oldsize)), (unsigned int) sample.size(), &(*(sample.begin())), (unsigned int) sample.size());
+    memcpy_s(&(*(retval.begin() + oldsize)), (unsigned int)sample.size(), &(*(sample.begin())), (unsigned int)sample.size());
   }
   return retval;
 }
@@ -396,7 +401,7 @@ void RTMPVideoStreamSink::PrepareTimestamps(MediaSampleInfo* sampleInfo, LONGLON
 
     if (_gaplength > 0)
     {
-      auto frameoffset = (originalDTS - _lastOriginalDTS) - _gaplength;     
+      auto frameoffset = (originalDTS - _lastOriginalDTS) - _gaplength;
       DTS = _lastDTS + frameoffset;
       PTS = originalPTS + publishoffset;
       _gaplength = 0;
@@ -415,15 +420,15 @@ void RTMPVideoStreamSink::PrepareTimestamps(MediaSampleInfo* sampleInfo, LONGLON
   _lastPTS = PTS;
   _lastDTS = DTS;
 
- /* LOG("VideoStreamSink" << (IsAggregating() ? "(Agg)" : "") 
-    << ":: PTS = " << "[" <<_lastOriginalPTS << "] "<<ToRTMPTimestamp(_lastOriginalPTS)
-    << ", DTS = " << "[" << _lastOriginalDTS << "] " << ToRTMPTimestamp(_lastOriginalDTS)
-    << ", D. PTS = " << "[" << PTS << "] " << ToRTMPTimestamp(PTS)
-    << ", D. DTS = " << "[" << DTS << "] " << ToRTMPTimestamp(DTS)
-    << ", Delta = " << "[" << TSDelta << "] " << ToRTMPTimestamp(TSDelta)
-    << ", C. Offset = " << "[" << PTS - DTS << "] " << ToRTMPTimestamp(PTS - DTS)
-    << ", Size = " << sampleInfo->GetTotalDataLength() << " bytes"
-    );*/
+  /* LOG("VideoStreamSink" << (IsAggregating() ? "(Agg)" : "")
+     << ":: PTS = " << "[" <<_lastOriginalPTS << "] "<<ToRTMPTimestamp(_lastOriginalPTS)
+     << ", DTS = " << "[" << _lastOriginalDTS << "] " << ToRTMPTimestamp(_lastOriginalDTS)
+     << ", D. PTS = " << "[" << PTS << "] " << ToRTMPTimestamp(PTS)
+     << ", D. DTS = " << "[" << DTS << "] " << ToRTMPTimestamp(DTS)
+     << ", Delta = " << "[" << TSDelta << "] " << ToRTMPTimestamp(TSDelta)
+     << ", C. Offset = " << "[" << PTS - DTS << "] " << ToRTMPTimestamp(PTS - DTS)
+     << ", Size = " << sampleInfo->GetTotalDataLength() << " bytes"
+     );*/
 }
 
 /*
@@ -524,7 +529,7 @@ std::vector<BYTE> RTMPVideoStreamSink::MakeDecoderConfigRecord(MediaSampleInfo* 
     {
       ++ppscount;
 
-      BitOp::AddToBitstream((unsigned short) nalu->GetLength(), ppsbs);
+      BitOp::AddToBitstream((unsigned short)nalu->GetLength(), ppsbs);
       auto oldsize = ppsbs.size();
       ppsbs.resize(nalu->GetLength() + oldsize);
       memcpy_s(&(*(ppsbs.begin() + oldsize)), nalu->GetLength(), nalu->GetData(), nalu->GetLength());
@@ -533,7 +538,7 @@ std::vector<BYTE> RTMPVideoStreamSink::MakeDecoderConfigRecord(MediaSampleInfo* 
     {
       ++spscount;
 
-      BitOp::AddToBitstream((unsigned short) nalu->GetLength(), spsbs);
+      BitOp::AddToBitstream((unsigned short)nalu->GetLength(), spsbs);
       auto oldsize = spsbs.size();
       spsbs.resize(nalu->GetLength() + oldsize);
       memcpy_s(&(*(spsbs.begin() + oldsize)), nalu->GetLength(), nalu->GetData(), nalu->GetLength());
@@ -556,11 +561,11 @@ std::vector<BYTE> RTMPVideoStreamSink::MakeDecoderConfigRecord(MediaSampleInfo* 
 
   auto oldsize = retval.size();
   retval.resize(spsbs.size() + oldsize);
-  memcpy_s(&(*(retval.begin() + oldsize)), (unsigned int) spsbs.size(), &(*(spsbs.begin())), (unsigned int) spsbs.size());
+  memcpy_s(&(*(retval.begin() + oldsize)), (unsigned int)spsbs.size(), &(*(spsbs.begin())), (unsigned int)spsbs.size());
 
   oldsize = retval.size();
   retval.resize(ppsbs.size() + oldsize);
-  memcpy_s(&(*(retval.begin() + oldsize)), (unsigned int) ppsbs.size(), &(*(ppsbs.begin())), (unsigned int) ppsbs.size());
+  memcpy_s(&(*(retval.begin() + oldsize)), (unsigned int)ppsbs.size(), &(*(ppsbs.begin())), (unsigned int)ppsbs.size());
 
   return retval;
 }
@@ -598,7 +603,7 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
   std::lock_guard<std::recursive_mutex> lock(_lockSink);
 
 
- 
+
 
   if (!IsState(SinkState::RUNNING)) //drop the sample
   {
@@ -613,8 +618,8 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
   LONGLONG TSDelta = 0;
 
 
- /* ComPtr<WorkItem> workitem;
-  ThrowIfFailed(pAsyncResult->GetState(&workitem));*/
+  /* ComPtr<WorkItem> workitem;
+   ThrowIfFailed(pAsyncResult->GetState(&workitem));*/
   ComPtr<WorkItem> workitem((WorkItem*)pAsyncResult->GetStateNoAddRef());
   if (workitem == nullptr)
     throw E_INVALIDARG;
@@ -658,7 +663,7 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
       unsigned int uiTSDelta = ToRTMPTimestamp(TSDelta);
 
       auto framepayload = PreparePayload(sampleInfo, compositiontimeoffset, false);
- 
+
 
       _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
         RTMPMessageType::VIDEO,
@@ -672,7 +677,7 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
 #if defined(_DEBUG)
     LOG("Queued Video Sample @ " << uiDTS << " - " << _streamsinkname);
 #endif
- 
+
   }
   else //marker
   {
@@ -688,7 +693,7 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
 
       _lastOriginalPTS = tick;
 
-    } 
+    }
   }
 
   workitem.Reset();

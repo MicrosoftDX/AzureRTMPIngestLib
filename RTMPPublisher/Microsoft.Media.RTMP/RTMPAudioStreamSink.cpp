@@ -130,6 +130,9 @@ IFACEMETHODIMP RTMPAudioStreamSink::ProcessSample(IMFSample *pSample)
 #if defined(_DEBUG)
       LOG("Dispatched audio sample - " << _streamsinkname);
 #endif
+
+      if (SinkState::RUNNING && _mediasinkparent->IsAggregated() == false)
+        ThrowIfFailed(NotifyStreamSinkRequestSample());
     }
     else
     {
@@ -151,9 +154,11 @@ IFACEMETHODIMP RTMPAudioStreamSink::ProcessSample(IMFSample *pSample)
           continue;
         }
       } 
+
+      if (SinkState::RUNNING)
+        ThrowIfFailed(NotifyStreamSinkRequestSample());
     }
-    if (SinkState::RUNNING)
-      ThrowIfFailed(NotifyStreamSinkRequestSample());
+    
     
   }
   catch (const std::exception& ex)
@@ -224,7 +229,9 @@ IFACEMETHODIMP RTMPAudioStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
 
 
         ThrowIfFailed(BeginProcessNextWorkitem(wi));
-        ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
+
+        if(_mediasinkparent->IsAggregated() == false)
+          ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
 
       }
     }
