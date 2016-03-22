@@ -505,11 +505,16 @@ void RTMPPublisherSink::Initialize(std::vector<PublishProfile^> targetProfiles,
       return make_shared<ProfileState>(prof, nullptr, nullptr);
     });
 
-    if (_targetProfileStates.size() == 1) //Target SBR
+    if (_targetProfileStates.size() == 1)  
     {
 
       if (aggregatingParentSink != nullptr)
         MakeAggregated(aggregatingParentSink);
+
+      if (aggregatingParentSink == nullptr) //SBR
+        MFAllocateSerialWorkQueue(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, &_sampleProcessingQueue);
+      else
+        _sampleProcessingQueue = aggregatingParentSink->GetSampleProcessingQueue();
 
       DWORD id = 0;
       if (_targetProfileStates[0]->PublishProfile->TargetEncodingProfile->Audio != nullptr)
@@ -532,6 +537,8 @@ void RTMPPublisherSink::Initialize(std::vector<PublishProfile^> targetProfiles,
     else //Target MBR
     { 
       MakeAggregating(); 
+
+      MFAllocateSerialWorkQueue(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, &_sampleProcessingQueue);
 
       MediaEncodingProfile^ interimprofile = ref new MediaEncodingProfile();
 

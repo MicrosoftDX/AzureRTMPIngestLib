@@ -453,13 +453,15 @@ HRESULT RTMPAudioStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
     if (firstpacket)
     {
       auto audioconfigpayload = PreparePayload(sampleInfo, true);
+      auto framepayload = PreparePayload(sampleInfo, false);
+      workitem.Reset();
 
       _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
         RTMPMessageType::AUDIO,
         uiPTS,
         audioconfigpayload);
 
-      auto framepayload = PreparePayload(sampleInfo, false);
+     
 
       _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
         RTMPMessageType::AUDIO,
@@ -472,6 +474,7 @@ HRESULT RTMPAudioStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
 
       unsigned int uiPTSDelta = ToRTMPTimestamp(TSDelta);
       auto framepayload = PreparePayload(sampleInfo, false);
+      workitem.Reset();
 
       _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
         RTMPMessageType::AUDIO,
@@ -497,10 +500,10 @@ HRESULT RTMPAudioStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
       _lastOriginalPTS = tick;
 
     }
-
+    workitem.Reset();
   }
 
-  workitem.Reset();
+ 
   pAsyncResult->SetStatus(S_OK);
 
   return S_OK;

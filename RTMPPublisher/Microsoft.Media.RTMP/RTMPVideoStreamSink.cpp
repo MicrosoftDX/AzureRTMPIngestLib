@@ -632,13 +632,14 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
     if (firstpacket)
     {
       auto decoderconfigpayload = PreparePayload(sampleInfo, compositiontimeoffset, true);
+      auto framepayload = PreparePayload(sampleInfo, compositiontimeoffset, false); 
+
+      workitem.Reset();
 
       _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
         RTMPMessageType::VIDEO,
         uiDTS,
-        decoderconfigpayload);
-
-      auto framepayload = PreparePayload(sampleInfo, compositiontimeoffset, false);
+        decoderconfigpayload); 
 
       _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
         RTMPMessageType::VIDEO,
@@ -653,6 +654,7 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
 
       auto framepayload = PreparePayload(sampleInfo, compositiontimeoffset, false);
 
+      workitem.Reset();
 
       _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
         RTMPMessageType::VIDEO,
@@ -683,9 +685,11 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
       _lastOriginalPTS = tick;
 
     }
+    workitem.Reset();
+
   }
 
-  workitem.Reset();
+ 
   pAsyncResult->SetStatus(S_OK);
   return S_OK;
 }

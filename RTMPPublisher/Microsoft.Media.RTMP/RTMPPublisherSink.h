@@ -85,7 +85,7 @@ namespace Microsoft
         RTMPPublisherSink()
         {
 
-          MFAllocateSerialWorkQueue(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, &_sampleProcessingQueue);
+       //   MFAllocateSerialWorkQueue(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, &_sampleProcessingQueue);
           return;
         }
 
@@ -223,6 +223,8 @@ namespace Microsoft
             _videoStreamSink->SetState(state);
           _sinkState = state;
         }
+
+        inline DWORD GetSampleProcessingQueue() { return _sampleProcessingQueue; }
 
         std::recursive_mutex SinkMutex;
 
