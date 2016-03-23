@@ -83,8 +83,9 @@ HRESULT RTMPVideoStreamSink::CreateMediaType(MediaEncodingProfile^ encodingProfi
     ThrowIfFailed(_currentMediaType->SetUINT32(CODECAPI_AVEncCommonRateControlMode, eAVEncCommonRateControlMode::eAVEncCommonRateControlMode_CBR));
 
 
+#if defined(_DEBUG)
     _streamsinkname = L"videosink:" + to_wstring((int)encodingProfile->Video->Bitrate);
-
+#endif
 
     LOG("Video media type created")
       return S_OK;
@@ -117,61 +118,59 @@ IFACEMETHODIMP RTMPVideoStreamSink::ProcessSample(IMFSample *pSample)
       return S_OK;
 
 
-    /* if (!IsAggregating())
-     {*/
-
-    LONGLONG sampleTime = 0;
-
-    ThrowIfFailed(pSample->GetSampleTime(&sampleTime), MF_E_NO_SAMPLE_TIMESTAMP, L"Could not get timestamp from video sample");
-
-    if (sampleTime < _clockStartOffset) //we do not process samples predating the clock start offset;
+    if (!IsAggregating())
     {
-      LOG("Not processing video sample")
-        return S_OK;
+      LONGLONG sampleTime = 0;
+
+      ThrowIfFailed(pSample->GetSampleTime(&sampleTime), MF_E_NO_SAMPLE_TIMESTAMP, L"Could not get timestamp from video sample");
+
+      if (sampleTime < _clockStartOffset) //we do not process samples predating the clock start offset;
+      {
+        LOG("Not processing video sample")
+          return S_OK;
+      }
+
+
+      ComPtr<WorkItem> wi;
+
+      ThrowIfFailed(MakeAndInitialize<WorkItem>(
+        &wi,
+        make_shared<MediaSampleInfo>(ContentType::VIDEO,
+          pSample)
+        ));
+
+
+      ThrowIfFailed(BeginProcessNextWorkitem(wi));
+
+#if defined(_DEBUG)
+      LOG("Dispatched video sample - " << _streamsinkname);
+#endif
+    }
+    else
+    { 
+    
+      for (auto profstate : _targetProfileStates)
+      {
+        DWORD sinkidx = 0;
+
+        try
+        {
+          ThrowIfFailed(profstate->DelegateSink->GetStreamSinkIndex(this->_majorType, sinkidx));
+          ThrowIfFailed(profstate->DelegateWriter->WriteSample(sinkidx, pSample));
+           
+        
+          LOG("Sent video sample to sink writer");
+        }
+        catch (...)
+        {
+          LOG("Error sending video sample to sink writer");
+          continue;
+        }
+      }
     }
 
-
-    ComPtr<WorkItem> wi;
-
-    ThrowIfFailed(MakeAndInitialize<WorkItem>(
-      &wi,
-      make_shared<MediaSampleInfo>(ContentType::VIDEO,
-        pSample)
-      ));
-
-
-    ThrowIfFailed(BeginProcessNextWorkitem(wi));
-
-    LOG("Dispatched video sample - " << _streamsinkname);
-
-
-
-    /*   }
-       else
-       {
-
-
-
-         for (auto profstate : _targetProfileStates)
-         {
-           DWORD sinkidx = 0;
-
-           try
-           {
-             ThrowIfFailed(profstate->DelegateSink->GetStreamSinkIndex(this->_majorType, sinkidx));
-             ThrowIfFailed(profstate->DelegateWriter->WriteSample(sinkidx, pSample));
-             LOG("Sent video sample to sink writer");
-           }
-           catch (...)
-           {
-             LOG("Error sending video sample to sink writer");
-             continue;
-           }
-         }
-       }
-
-       if (SinkState::RUNNING)
-         ThrowIfFailed(NotifyStreamSinkRequestSample());*/
+    if (SinkState::RUNNING)
+      ThrowIfFailed(NotifyStreamSinkRequestSample());
   }
   catch (const std::exception& ex)
   {
@@ -221,12 +220,10 @@ IFACEMETHODIMP RTMPVideoStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
       pvarContextValue
       );
 
-    /* if (!IsAggregating())
-     {*/
-
-    if (markerInfo->GetMarkerType() == MFSTREAMSINK_MARKER_TYPE::MFSTREAMSINK_MARKER_ENDOFSEGMENT)
+    if (!IsAggregating())
     {
-      if (!IsAggregating())
+
+      if (markerInfo->GetMarkerType() == MFSTREAMSINK_MARKER_TYPE::MFSTREAMSINK_MARKER_ENDOFSEGMENT)
       {
 
         SetState(SinkState::EOS);
@@ -235,6 +232,20 @@ IFACEMETHODIMP RTMPVideoStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
         create_task([this]() { _mediasinkparent->StopPresentationClock(); });
       }
       else
+      {
+        ThrowIfFailed(MakeAndInitialize<WorkItem>(
+          &wi,
+          markerInfo
+          ));
+
+        ThrowIfFailed(BeginProcessNextWorkitem(wi));
+
+        ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
+      }
+    }
+    else
+    {
+      if (markerInfo->GetMarkerType() == MFSTREAMSINK_MARKER_TYPE::MFSTREAMSINK_MARKER_ENDOFSEGMENT)
       {
         for (auto profstate : _targetProfileStates)
         {
@@ -251,70 +262,39 @@ IFACEMETHODIMP RTMPVideoStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
             continue;
           }
         }
+
+
+
+        SetState(SinkState::EOS);
+        LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video stream end of segment");
+        NotifyStreamSinkMarker(markerInfo->GetContextValue());
+
+        //if aggregating - the sink will call this on the aggregating parent
+        //  create_task([this]() { _mediasinkparent->StopPresentationClock(); });
+      }
+      else
+      {
+        LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video stream marker");
+
+        for (auto profstate : _targetProfileStates)
+        {
+          DWORD sinkidx = 0;
+
+          try
+          {
+            ThrowIfFailed(profstate->DelegateSink->GetStreamSinkIndex(this->_majorType, sinkidx));
+            ThrowIfFailed(profstate->DelegateWriter->PlaceMarker(sinkidx, nullptr));
+          }
+          catch (...)
+          {
+            continue;
+          }
+        }
+
+        ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
+
       }
     }
-    else
-    {
-      ThrowIfFailed(MakeAndInitialize<WorkItem>(
-        &wi,
-        markerInfo
-        ));
-
-      ThrowIfFailed(BeginProcessNextWorkitem(wi));
-    }
-    //}
-    //else
-    //{
-    //  if (markerInfo->GetMarkerType() == MFSTREAMSINK_MARKER_TYPE::MFSTREAMSINK_MARKER_ENDOFSEGMENT)
-    //  {
-    //    for (auto profstate : _targetProfileStates)
-    //    {
-    //      DWORD sinkidx = 0;
-
-    //      try
-    //      {
-    //        ThrowIfFailed(profstate->DelegateSink->GetStreamSinkIndex(this->_majorType, sinkidx));
-    //        ThrowIfFailed(profstate->DelegateWriter->Flush(sinkidx));
-    //        ThrowIfFailed(profstate->DelegateWriter->NotifyEndOfSegment(sinkidx));
-    //      }
-    //      catch (...)
-    //      {
-    //        continue;
-    //      }
-    //    }
-
-
-
-    //    SetState(SinkState::EOS);
-    //    LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video stream end of segment");
-    //    NotifyStreamSinkMarker(markerInfo->GetContextValue());
-
-    //    //if aggregating - the sink will call this on the aggregating parent
-    //    //  create_task([this]() { _mediasinkparent->StopPresentationClock(); });
-    //  }
-    //  else
-    //  {
-    //    LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video stream marker");
-
-    //    for (auto profstate : _targetProfileStates)
-    //    {
-    //      DWORD sinkidx = 0;
-
-    //      try
-    //      {
-    //        ThrowIfFailed(profstate->DelegateSink->GetStreamSinkIndex(this->_majorType, sinkidx));
-    //        ThrowIfFailed(profstate->DelegateWriter->PlaceMarker(sinkidx, nullptr));
-    //      }
-    //      catch (...)
-    //      {
-    //        continue;
-    //      }
-    //    }
-
-    //    ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
-
-    //  }
-    //}
 
 
 
@@ -441,84 +421,13 @@ void RTMPVideoStreamSink::PrepareTimestamps(MediaSampleInfo* sampleInfo, LONGLON
   << ", Size = " << sampleInfo->GetTotalDataLength() << " bytes"
   );*/
 }
-
-/*
-void RTMPVideoStreamSink::PrepareTimestamps(MediaSampleInfo* sampleInfo, LONGLONG& PTS, LONGLONG& DTS, LONGLONG& TSDelta)
-{
-_lastOriginalDTS = sampleInfo->GetDecodeTimestamp();
-_lastOriginalPTS = sampleInfo->GetSampleTimestamp();
-if (_lastOriginalDTS < 0)
-_lastOriginalDTS = _lastOriginalPTS;
-
-if (_startPTS < 0) //first video sample
-{
-
-if (_publishparams->VideoTimestampBase > 0) //we are trying to continue from a previous publish effort
-{
-DTS = _publishparams->VideoTimestampBase + _sampleInterval;
-PTS = _publishparams->VideoTimestampBase + _sampleInterval;
-}
-else
-{
-//if video timestamp does not start at clock start - we offset it to start at clock start
-if (_lastOriginalDTS > _clockStartOffset)
-DTS = _clockStartOffset;
-else
-DTS = _lastOriginalDTS;
-
-PTS = _lastOriginalPTS;
-}
-_startPTS = PTS;
-
-}
-else
-{
-if (_gaplength > 0)
-{
-DTS = _lastDTS + _sampleInterval;
-PTS = _lastPTS + _sampleInterval + _gaplength;
-_gaplength = 0;
-}
-else
-{
-DTS = _lastDTS + _sampleInterval;
-PTS = _lastPTS + _sampleInterval;
-}
-
-}
-
-TSDelta = DTS - _lastDTS;
-_lastPTS = PTS;
-_lastDTS = DTS;
-
-LOG("Video Sample : Original PTS = " << (unsigned int)round(_lastOriginalPTS * TICKSTOMILLIS)
-<< ", Original DTS = " << (unsigned int)round(_lastOriginalDTS * TICKSTOMILLIS)
-<< ", Derived PTS = " << (unsigned int)round(PTS * TICKSTOMILLIS)
-<< ", Derived DTS = " << (unsigned int)round(DTS * TICKSTOMILLIS)
-<< ", Composition Offset = " << (unsigned int)round((PTS - DTS) * TICKSTOMILLIS)
-<< ", Gap Length = " << (unsigned int)round(_gaplength * TICKSTOMILLIS)
-);
-}
-*/
+ 
 
 std::vector<BYTE> RTMPVideoStreamSink::MakeDecoderConfigRecord(MediaSampleInfo* pSampleInfo)
 {
   //has the media type been updated by the encoder with the sequence header ?
   std::vector<BYTE> retval;
-  //try
-  //{
-  //  unsigned int blobsize = 0;
-  //  ThrowIfFailed(_currentMediaType->GetBlobSize(MF_MT_MPEG_SEQUENCE_HEADER, &blobsize));
-  //  retval.resize(blobsize);
-  //  ThrowIfFailed(_currentMediaType->GetBlob(MF_MT_MPEG_SEQUENCE_HEADER, &(*(retval.begin())), (unsigned int)retval.size(), &blobsize));
-
-  //  if (retval.size() > 0)
-  //    return retval;
-  //}
-  //catch (...)
-  //{
-  //  retval.resize(0);
-  //}
+  
 
   //if not we build it by hand
   retval.push_back(1);
@@ -620,15 +529,14 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
   }
 
 
-
-
   bool firstpacket = false;
   LONGLONG PTS = 0;
   LONGLONG DTS = 0;
   LONGLONG TSDelta = 0;
 
 
-
+  /* ComPtr<WorkItem> workitem;
+  ThrowIfFailed(pAsyncResult->GetState(&workitem));*/
   ComPtr<WorkItem> workitem((WorkItem*)pAsyncResult->GetStateNoAddRef());
   if (workitem == nullptr)
     throw E_INVALIDARG;
@@ -637,128 +545,75 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
   if (workitem->GetWorkItemInfo()->GetWorkItemType() == WorkItemType::MEDIASAMPLE)
   {
     auto sampleInfo = static_cast<MediaSampleInfo*>(workitem->GetWorkItemInfo().get());
-    if (!IsAggregating())
+    auto sampleTimestamp = sampleInfo->GetSampleTimestamp();
+
+
+    firstpacket = (_startPTS < 0); //first video packet 
+
+    PrepareTimestamps(sampleInfo, PTS, DTS, TSDelta);
+
+    unsigned int uiPTS = ToRTMPTimestamp(PTS);
+    unsigned int uiDTS = ToRTMPTimestamp(DTS);
+
+    unsigned int compositiontimeoffset = uiPTS - uiDTS;
+
+    if (firstpacket)
     {
+      auto decoderconfigpayload = PreparePayload(sampleInfo, compositiontimeoffset, true);
 
-      auto sampleTimestamp = sampleInfo->GetSampleTimestamp();
+      _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
+        RTMPMessageType::VIDEO,
+        uiDTS,
+        decoderconfigpayload);
 
+      auto framepayload = PreparePayload(sampleInfo, compositiontimeoffset, false);
 
-      firstpacket = (_startPTS < 0); //first video packet 
-
-      PrepareTimestamps(sampleInfo, PTS, DTS, TSDelta);
-
-      unsigned int uiPTS = ToRTMPTimestamp(PTS);
-      unsigned int uiDTS = ToRTMPTimestamp(DTS);
-
-      unsigned int compositiontimeoffset = uiPTS - uiDTS;
-
-      if (firstpacket)
-      {
-        auto decoderconfigpayload = PreparePayload(sampleInfo, compositiontimeoffset, true);
-        auto framepayload = PreparePayload(sampleInfo, compositiontimeoffset, false);
-
-        workitem.Reset();
-
-        _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
-          RTMPMessageType::VIDEO,
-          uiDTS,
-          decoderconfigpayload);
-
-        _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
-          RTMPMessageType::VIDEO,
-          uiDTS,
-          framepayload);
-
-      }
-      else
-      {
-
-        unsigned int uiTSDelta = ToRTMPTimestamp(TSDelta);
-
-        auto framepayload = PreparePayload(sampleInfo, compositiontimeoffset, false);
-
-        workitem.Reset();
-
-        _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
-          RTMPMessageType::VIDEO,
-          uiDTS,
-          framepayload);
-
-      }
-
-      LOG("Queued Video Sample @ " << uiDTS << " - " << _streamsinkname);
+      _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
+        RTMPMessageType::VIDEO,
+        uiDTS,
+        framepayload);
 
     }
     else
     {
-      for (auto profstate : _targetProfileStates)
-      {
-        DWORD sinkidx = 0;
 
-        try
-        {
-          ThrowIfFailed(profstate->DelegateSink->GetStreamSinkIndex(this->_majorType, sinkidx));
-          ThrowIfFailed(profstate->DelegateWriter->WriteSample(sinkidx, sampleInfo->GetSample().Get()));
-          LOG("Sent video sample to sink writer");
-        }
-        catch (...)
-        {
-          LOG("Error sending video sample to sink writer");
-          continue;
-        }
-      }
+      unsigned int uiTSDelta = ToRTMPTimestamp(TSDelta);
+
+      auto framepayload = PreparePayload(sampleInfo, compositiontimeoffset, false);
+
+
+      _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
+        RTMPMessageType::VIDEO,
+        uiDTS,
+        framepayload);
+
     }
 
-    if (SinkState::RUNNING)
-      ThrowIfFailed(NotifyStreamSinkRequestSample());
 
 
-
+#if defined(_DEBUG)
+    LOG("Queued Video Sample @ " << uiDTS << " - " << _streamsinkname);
+#endif
 
   }
   else //marker
   {
     auto markerInfo = static_cast<MarkerInfo*>(workitem->GetWorkItemInfo().get());
 
-
     if (markerInfo->GetMarkerType() == MFSTREAMSINK_MARKER_TYPE::MFSTREAMSINK_MARKER_TICK)
     {
-      if (!IsAggregating())
-      {
+      //_gaplength += _sampleInterval; 
+      auto tick = markerInfo->GetMarkerTick();
+      _gaplength += (tick - _lastOriginalPTS);
 
+      LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video stream gap at : " << tick << ", Last Original PTS : " << _lastOriginalPTS << ", gaplength :" << _gaplength);
 
-        auto tick = markerInfo->GetMarkerTick();
-        _gaplength += (tick - _lastOriginalPTS);
-
-        LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video stream gap at : " << tick << ", Last Original PTS : " << _lastOriginalPTS << ", gaplength :" << _gaplength);
-
-        _lastOriginalPTS = tick;
-      }
-      else
-      {
-        for (auto profstate : _targetProfileStates)
-        {
-          DWORD sinkidx = 0;
-
-          try
-          {
-            ThrowIfFailed(profstate->DelegateSink->GetStreamSinkIndex(this->_majorType, sinkidx));
-            ThrowIfFailed(profstate->DelegateWriter->PlaceMarker(sinkidx, nullptr));
-          }
-          catch (...)
-          {
-            continue;
-          }
-        }
-      }
+      _lastOriginalPTS = tick;
 
     }
-
-    workitem.Reset();
-
   }
 
-
+  workitem.Reset();
   pAsyncResult->SetStatus(S_OK);
   return S_OK;
 }

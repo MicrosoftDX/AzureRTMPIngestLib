@@ -69,11 +69,13 @@ namespace Microsoft
         HRESULT RuntimeClassInitialize(DWORD maxlen)
         {
           _maxlen = maxlen;
+          _bufferdata.resize(maxlen);
+          return S_OK;
         }
 
         STDMETHODIMP GetCurrentLength(DWORD* pcbCurrentLength)
         {
-          *pcbCurrentLength = _bufferdata.size();
+          *pcbCurrentLength = (DWORD)_bufferdata.size();
           return S_OK;
         }
 
@@ -102,6 +104,7 @@ namespace Microsoft
           if (pcbCurrentLength != nullptr)
             *pcbCurrentLength = (DWORD)_bufferdata.size();
 
+          return S_OK;
         }
 
         STDMETHODIMP Unlock()
@@ -248,6 +251,66 @@ namespace Microsoft
             }
 
           }
+
+          return retval;
+        }
+
+        static ComPtr<IMFSample> CloneSample(IMFSample* pSample)
+        {
+          ComPtr<IMFSample> retval = nullptr;
+          ThrowIfFailed(MFCreateSample(&retval));
+          if (retval == nullptr)
+            throw E_OUTOFMEMORY;
+
+          DWORD maxlen = 0; 
+
+          DWORD bufferCount = 0;
+          ThrowIfFailed(pSample->GetBufferCount(&bufferCount));
+
+          for (DWORD i = 0; i < bufferCount; i++)
+          {
+            ComPtr<IMFMediaBuffer> buffer = nullptr;
+            ThrowIfFailed(pSample->GetBufferByIndex(i, &buffer));
+            DWORD bufferLen = 0;
+            ThrowIfFailed(buffer->GetCurrentLength(&bufferLen));
+
+            
+            if (bufferLen > 0)
+            {
+              ComPtr<IMFMediaBuffer> custombuff;
+              ThrowIfFailed(MakeAndInitialize<CustomMediaBuffer>(&custombuff, bufferLen));
+              
+              DWORD maxlen = 0;
+              BYTE * srcbufferdata = nullptr;
+              BYTE* destbufferdata = nullptr;
+              ThrowIfFailed(buffer->Lock(&srcbufferdata, &maxlen, &bufferLen));
+              ThrowIfFailed(custombuff->Lock(&destbufferdata, &maxlen, &bufferLen)); 
+              memcpy_s(destbufferdata, bufferLen, srcbufferdata, bufferLen);
+              ThrowIfFailed(buffer->Unlock());
+              ThrowIfFailed(custombuff->Unlock());
+              ThrowIfFailed(custombuff->SetCurrentLength(bufferLen));
+              ThrowIfFailed(retval->AddBuffer(custombuff.Get()));
+            }
+
+          }
+
+          LONGLONG sampletime;
+          LONGLONG sampledur; 
+
+          ThrowIfFailed(pSample->GetSampleTime(&sampletime));
+          ThrowIfFailed(retval->SetSampleTime(sampletime));
+          ThrowIfFailed(pSample->GetSampleDuration(&sampledur));
+          ThrowIfFailed(retval->SetSampleDuration(sampledur));
+
+          UINT64 decodets = 0;
+          if (SUCCEEDED(pSample->GetUINT64(MFSampleExtension_DecodeTimestamp, &decodets)))
+          {
+            ThrowIfFailed(retval->SetUINT64(MFSampleExtension_DecodeTimestamp,decodets));
+          } 
+
+          UINT32 val = 0;
+          ThrowIfFailed(pSample->GetUINT32(MFSampleExtension_CleanPoint, &val));
+          ThrowIfFailed(retval->SetUINT32(MFSampleExtension_CleanPoint,val));
 
           return retval;
         }
