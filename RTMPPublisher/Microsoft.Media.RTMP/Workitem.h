@@ -33,6 +33,7 @@ OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vector>
 #include <wtypes.h>
 
+
 using namespace Microsoft::WRL;
 using namespace std;
 
@@ -58,6 +59,61 @@ namespace Microsoft
         static const unsigned int MARKER = 2;
       };
 
+
+      class CustomMediaBuffer :
+        public RuntimeClass < RuntimeClassFlags <RuntimeClassType::ClassicCom>,
+        IMFMediaBuffer,
+        FtmBase>
+      {
+      public:
+        HRESULT RuntimeClassInitialize(DWORD maxlen)
+        {
+          _maxlen = maxlen;
+        }
+
+        STDMETHODIMP GetCurrentLength(DWORD* pcbCurrentLength)
+        {
+          *pcbCurrentLength = _bufferdata.size();
+          return S_OK;
+        }
+
+        STDMETHODIMP GetMaxLength(DWORD* pcbMaxLength)
+        {
+          *pcbMaxLength = _maxlen;
+          return S_OK;
+        }
+
+        STDMETHODIMP SetCurrentLength(DWORD cbCurrentLength)
+        {
+          if (cbCurrentLength > _maxlen)
+            return E_INVALIDARG;
+          else
+          {
+            _bufferdata.resize((size_t)cbCurrentLength);
+            return S_OK;
+          }
+        }
+
+        STDMETHODIMP Lock(BYTE ** ppbBuffer, DWORD *pcbMaxLen, DWORD *pcbCurrentLength)
+        {
+          *ppbBuffer = &(*(begin(_bufferdata)));
+          if(pcbMaxLen != nullptr)
+            *pcbMaxLen = _maxlen;
+          if (pcbCurrentLength != nullptr)
+            *pcbCurrentLength = (DWORD)_bufferdata.size();
+
+        }
+
+        STDMETHODIMP Unlock()
+        {
+          return S_OK;
+        }
+
+      private:
+        std::vector<BYTE> _bufferdata;
+        DWORD _maxlen = 0;
+         
+      };
       struct WorkItemInfo
       {
         WorkItemInfo(unsigned int contenttype, unsigned int workitemtype) : _contenttype(contenttype), _workitemtype(workitemtype)

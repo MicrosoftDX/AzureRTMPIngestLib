@@ -235,10 +235,8 @@ namespace Microsoft
 
         bool _isAggregating = false; 
 
-
-#if defined(_DEBUG)
-        wstring _streamsinkname;
-#endif
+ 
+        wstring _streamsinkname; 
 
 
       };

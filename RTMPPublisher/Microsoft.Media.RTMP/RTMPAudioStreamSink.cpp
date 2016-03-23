@@ -76,6 +76,8 @@ HRESULT RTMPAudioStreamSink::CreateMediaType(MediaEncodingProfile^ encodingProfi
     //Set CBR
     ThrowIfFailed(_currentMediaType->SetUINT32(CODECAPI_AVEncCommonRateControlMode, eAVEncCommonRateControlMode::eAVEncCommonRateControlMode_CBR));
 
+    _streamsinkname = L"audiosink:" + to_wstring((int)encodingProfile->Audio->Bitrate);
+
     LOG("Audio media type created")
       return S_OK;
   }
@@ -105,54 +107,52 @@ IFACEMETHODIMP RTMPAudioStreamSink::ProcessSample(IMFSample *pSample)
     if (IsState(SinkState::EOS)) //drop
       return S_OK;
 
-    if (!IsAggregating())
+    /* if (!IsAggregating())
+     {*/
+    LONGLONG sampleTime = 0;
+
+    ThrowIfFailed(pSample->GetSampleTime(&sampleTime), MF_E_NO_SAMPLE_TIMESTAMP, L"Could not get timestamp from audio sample");
+
+    if (sampleTime < _clockStartOffset) //we do not process samples predating the clock start offset;
     {
-      LONGLONG sampleTime = 0;
-
-      ThrowIfFailed(pSample->GetSampleTime(&sampleTime), MF_E_NO_SAMPLE_TIMESTAMP, L"Could not get timestamp from audio sample");
-
-      if (sampleTime < _clockStartOffset) //we do not process samples predating the clock start offset;
-      {
-        LOG("Not processing audio sample")
-          return S_OK;
-      }
-
-      ComPtr<WorkItem> wi;
-
-      ThrowIfFailed(MakeAndInitialize<WorkItem>(
-        &wi,
-        make_shared<MediaSampleInfo>(ContentType::AUDIO,
-          pSample)
-        ));
-
-      ThrowIfFailed(BeginProcessNextWorkitem(wi));
-
-#if defined(_DEBUG)
-      LOG("Dispatched audio sample - " << _streamsinkname);
-#endif
+      LOG("Not processing audio sample")
+        return S_OK;
     }
-    else
-    {
-      
-      //LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio Sample : Original PTS = " << (unsigned int) round(msi->GetSampleTimestamp() * TICKSTOMILLIS)
-      //);
-      for (auto profstate : _targetProfileStates)
-      {
-        DWORD sinkidx = 0;
 
-        try
-        {
-          ThrowIfFailed(profstate->DelegateSink->GetStreamSinkIndex(this->_majorType, sinkidx));
-          ThrowIfFailed(profstate->DelegateWriter->WriteSample(sinkidx, pSample));
-        }
-        catch (...)
-        {
-          continue;
-        }
-      }
-    }
-    if (SinkState::RUNNING)
-      ThrowIfFailed(NotifyStreamSinkRequestSample());
+    ComPtr<WorkItem> wi;
+
+    ThrowIfFailed(MakeAndInitialize<WorkItem>(
+      &wi,
+      make_shared<MediaSampleInfo>(ContentType::AUDIO,
+        pSample)
+      ));
+
+    ThrowIfFailed(BeginProcessNextWorkitem(wi));
+
+    LOG("Dispatched audio sample - " << _streamsinkname);
+    //}
+    //else
+    //{
+    //  
+    //  //LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio Sample : Original PTS = " << (unsigned int) round(msi->GetSampleTimestamp() * TICKSTOMILLIS)
+    //  //);
+    //  for (auto profstate : _targetProfileStates)
+    //  {
+    //    DWORD sinkidx = 0;
+
+    //    try
+    //    {
+    //      ThrowIfFailed(profstate->DelegateSink->GetStreamSinkIndex(this->_majorType, sinkidx));
+    //      ThrowIfFailed(profstate->DelegateWriter->WriteSample(sinkidx, pSample));
+    //    }
+    //    catch (...)
+    //    {
+    //      continue;
+    //    }
+    //  }
+    //}
+    //if (SinkState::RUNNING)
+    //  ThrowIfFailed(NotifyStreamSinkRequestSample());
 
   }
   catch (const std::exception& ex)
@@ -204,15 +204,42 @@ IFACEMETHODIMP RTMPAudioStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
       pvarContextValue
 
       );
-    if (!IsAggregating())
-    {
+
+   /* if (!IsAggregating())
+    {*/
 
       if (markerInfo->GetMarkerType() == MFSTREAMSINK_MARKER_TYPE::MFSTREAMSINK_MARKER_ENDOFSEGMENT)
       {
-        SetState(SinkState::EOS);
-        LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio stream end of segment");
-        NotifyStreamSinkMarker(markerInfo->GetContextValue());
-        create_task([this]() { _mediasinkparent->StopPresentationClock(); });
+        if (!IsAggregating())
+        {
+          SetState(SinkState::EOS);
+          LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio stream end of segment");
+          NotifyStreamSinkMarker(markerInfo->GetContextValue());
+          create_task([this]() { _mediasinkparent->StopPresentationClock(); });
+        }
+        else
+        {
+          for (auto profstate : _targetProfileStates)
+          {
+            DWORD sinkidx = 0;
+
+            try
+            {
+              ThrowIfFailed(profstate->DelegateSink->GetStreamSinkIndex(this->_majorType, sinkidx));
+              ThrowIfFailed(profstate->DelegateWriter->Flush(sinkidx));
+              ThrowIfFailed(profstate->DelegateWriter->NotifyEndOfSegment(sinkidx));
+            }
+            catch (...)
+            {
+              continue;
+            }
+          }
+
+
+          SetState(SinkState::EOS);
+          NotifyStreamSinkMarker(markerInfo->GetContextValue());
+          LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio stream end of segment");
+        }
       }
       else
       {
@@ -222,11 +249,10 @@ IFACEMETHODIMP RTMPAudioStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
           ));
 
 
-        ThrowIfFailed(BeginProcessNextWorkitem(wi));
-        ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
+        ThrowIfFailed(BeginProcessNextWorkitem(wi)); 
 
       }
-    }
+   /* }
     else
     {
 
@@ -274,7 +300,7 @@ IFACEMETHODIMP RTMPAudioStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
 
         ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
       }
-    }
+    }*/
 
 
   }
@@ -441,69 +467,115 @@ HRESULT RTMPAudioStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
   if (workitem->GetWorkItemInfo()->GetWorkItemType() == WorkItemType::MEDIASAMPLE)
   {
     auto sampleInfo = static_cast<MediaSampleInfo*>(workitem->GetWorkItemInfo().get());
-    auto sampleTimestamp = sampleInfo->GetSampleTimestamp();
 
-
-    firstpacket = (_startPTS < 0); //first video packet 
-
-    PrepareTimestamps(sampleInfo, PTS, TSDelta);
-
-    unsigned int uiPTS = ToRTMPTimestamp(PTS);
-
-    if (firstpacket)
+    if (!IsAggregating())
     {
-      auto audioconfigpayload = PreparePayload(sampleInfo, true);
-      auto framepayload = PreparePayload(sampleInfo, false);
-      workitem.Reset();
+      auto sampleTimestamp = sampleInfo->GetSampleTimestamp();
 
-      _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
-        RTMPMessageType::AUDIO,
-        uiPTS,
-        audioconfigpayload);
 
-     
+      firstpacket = (_startPTS < 0); //first video packet 
 
-      _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
-        RTMPMessageType::AUDIO,
-        uiPTS,
-        framepayload);
+      PrepareTimestamps(sampleInfo, PTS, TSDelta);
 
+      unsigned int uiPTS = ToRTMPTimestamp(PTS);
+
+      if (firstpacket)
+      {
+        auto audioconfigpayload = PreparePayload(sampleInfo, true);
+        auto framepayload = PreparePayload(sampleInfo, false);
+        workitem.Reset();
+
+        _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
+          RTMPMessageType::AUDIO,
+          uiPTS,
+          audioconfigpayload);
+
+
+
+        _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
+          RTMPMessageType::AUDIO,
+          uiPTS,
+          framepayload);
+
+      }
+      else
+      {
+
+        unsigned int uiPTSDelta = ToRTMPTimestamp(TSDelta);
+        auto framepayload = PreparePayload(sampleInfo, false);
+        workitem.Reset();
+
+        _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
+          RTMPMessageType::AUDIO,
+          uiPTS,
+          framepayload);
+      }
+
+
+      LOG("Queued Audio Sample @ " << uiPTS << " - " << _streamsinkname);
     }
     else
     {
+      for (auto profstate : _targetProfileStates)
+      {
+        DWORD sinkidx = 0;
 
-      unsigned int uiPTSDelta = ToRTMPTimestamp(TSDelta);
-      auto framepayload = PreparePayload(sampleInfo, false);
-      workitem.Reset();
+        try
+        {
+          ThrowIfFailed(profstate->DelegateSink->GetStreamSinkIndex(this->_majorType, sinkidx));
+          ThrowIfFailed(profstate->DelegateWriter->WriteSample(sinkidx, sampleInfo->GetSample().Get()));
+        }
+        catch (...)
+        {
+          continue;
+        }
+      }
 
-      _mediasinkparent->GetMessenger()->QueueAudioVideoMessage(
-        RTMPMessageType::AUDIO,
-        uiPTS,
-        framepayload);
+
     }
 
-#if defined(_DEBUG)
-    LOG("Queued Audio Sample @ " << uiPTS << " - " << _streamsinkname);
-#endif
-
+    if (SinkState::RUNNING)
+      ThrowIfFailed(NotifyStreamSinkRequestSample());
   }
   else //marker
   {
     auto markerInfo = static_cast<MarkerInfo*>(workitem->GetWorkItemInfo().get());
 
+    
     if (markerInfo->GetMarkerType() == MFSTREAMSINK_MARKER_TYPE::MFSTREAMSINK_MARKER_TICK)
     {
-      //_gaplength += _sampleInterval;
-      auto tick = markerInfo->GetMarkerTick();
-      _gaplength += (tick - _lastOriginalPTS);
-      LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio stream gap at : " << tick << ", Last Original PTS : " << _lastOriginalPTS << ", gaplength :" << _gaplength);
-      _lastOriginalPTS = tick;
+      if (!IsAggregating())
+      {
+        //_gaplength += _sampleInterval;
+        auto tick = markerInfo->GetMarkerTick();
+        _gaplength += (tick - _lastOriginalPTS);
+        LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio stream gap at : " << tick << ", Last Original PTS : " << _lastOriginalPTS << ", gaplength :" << _gaplength);
+        _lastOriginalPTS = tick;
+      }
+      else
+      {
+        for (auto profstate : _targetProfileStates)
+        {
+          DWORD sinkidx = 0;
+
+          try
+          {
+            ThrowIfFailed(profstate->DelegateSink->GetStreamSinkIndex(this->_majorType, sinkidx));
+            ThrowIfFailed(profstate->DelegateWriter->PlaceMarker(sinkidx, nullptr));
+          }
+          catch (...)
+          {
+            continue;
+          }
+        } 
+      }
+      ThrowIfFailed(NotifyStreamSinkMarker(markerInfo->GetContextValue()));
 
     }
     workitem.Reset();
   }
 
- 
+
   pAsyncResult->SetStatus(S_OK);
 
   return S_OK;

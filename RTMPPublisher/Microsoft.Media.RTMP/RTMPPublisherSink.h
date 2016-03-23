@@ -85,7 +85,7 @@ namespace Microsoft
         RTMPPublisherSink()
         {
 
-       //   MFAllocateSerialWorkQueue(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, &_sampleProcessingQueue);
+          MFAllocateSerialWorkQueue(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, &_sampleProcessingQueue);
           return;
         }
 
