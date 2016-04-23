@@ -30,6 +30,9 @@ OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace Microsoft::Media::RTMP;
 
+
+ 
+
 const wchar_t *RTMPPublishType::LIVE = L"live";
 const wchar_t *RTMPPublishType::RECORD = L"record";
 const wchar_t *RTMPPublishType::APPEND = L"append";

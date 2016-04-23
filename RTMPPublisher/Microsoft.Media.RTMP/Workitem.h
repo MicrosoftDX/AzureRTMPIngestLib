@@ -32,6 +32,7 @@ OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <wrl.h>
 #include <vector>
 #include <wtypes.h>
+#include <Constants.h>
 
 
 using namespace Microsoft::WRL;
@@ -163,7 +164,9 @@ namespace Microsoft
 
           if (!(_sample == nullptr))
           {
-            ThrowIfFailed(_sample->GetSampleTime(&retval));
+
+            if(FAILED(_sample->GetUINT64(PARENT_SAMPLE_TIMESTAMP, (ULONGLONG*)&retval)))
+              ThrowIfFailed(_sample->GetSampleTime(&retval));
           }
           else
             throw E_OUTOFMEMORY;

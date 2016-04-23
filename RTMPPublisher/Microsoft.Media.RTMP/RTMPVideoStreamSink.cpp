@@ -32,6 +32,7 @@ OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <limits>
 #include <cmath>
 
+#include "Constants.h"
 #include "WorkItem.h"
 #include "RTMPPublisherSink.h"
 #include "RTMPVideoStreamSink.h"
@@ -148,7 +149,10 @@ IFACEMETHODIMP RTMPVideoStreamSink::ProcessSample(IMFSample *pSample)
     }
     else
     { 
-    
+      LONGLONG sampleTime = 0;
+      ThrowIfFailed(pSample->GetSampleTime(&sampleTime), MF_E_NO_SAMPLE_TIMESTAMP, L"Could not get timestamp from video sample");
+      ThrowIfFailed(pSample->SetUINT64(PARENT_SAMPLE_TIMESTAMP, sampleTime));
+
       for (auto profstate : _targetProfileStates)
       {
         DWORD sinkidx = 0;
