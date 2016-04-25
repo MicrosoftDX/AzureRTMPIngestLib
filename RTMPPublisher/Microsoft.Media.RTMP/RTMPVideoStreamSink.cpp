@@ -370,6 +370,7 @@ void RTMPVideoStreamSink::PrepareTimestamps(MediaSampleInfo* sampleInfo, LONGLON
 
   auto publishoffset = _targetProfileStates[0]->PublishProfile->VideoTimestampBase > 0 ?
     _targetProfileStates[0]->PublishProfile->VideoTimestampBase + _sampleInterval : 0;
+   
 
   if (_startPTS < 0) //first video sample
   {
@@ -392,46 +393,20 @@ void RTMPVideoStreamSink::PrepareTimestamps(MediaSampleInfo* sampleInfo, LONGLON
   else
   {
 
-    DTS = _lastDTS + _sampleInterval;
-    PTS = _lastPTS + _sampleInterval;
+    if (_gaplength > 0)
+    {
+      auto frameoffset = (originalDTS - _lastOriginalDTS) - _gaplength;
+      DTS = _lastDTS + frameoffset;
+      PTS = originalPTS + publishoffset;
+      _gaplength = 0;
+    }
+    else
+    {
+      DTS = _lastDTS + (originalDTS - _lastOriginalDTS);
+      PTS = originalPTS + publishoffset;
+    }
+
   }
-
-
-  //if (_startPTS < 0) //first video sample
-  //{
-
-  //  //if video timestamp does not start at clock start - we offset it to start at clock start
-  //  if (originalDTS > _clockStartOffset)
-  //  {
-  //    DTS = _clockStartOffset + publishoffset;
-  //    PTS = DTS;
-  //  }
-  //  else
-  //  {
-  //    DTS = originalDTS + publishoffset;
-  //    PTS = originalPTS + publishoffset;
-  //  }
-
-  //  _startPTS = PTS;
-
-  //}
-  //else
-  //{
-
-  //  if (_gaplength > 0)
-  //  {
-  //    auto frameoffset = (originalDTS - _lastOriginalDTS) - _gaplength;
-  //    DTS = _lastDTS + frameoffset;
-  //    PTS = originalPTS + publishoffset;
-  //    _gaplength = 0;
-  //  }
-  //  else
-  //  {
-  //    DTS = _lastDTS + (originalDTS - _lastOriginalDTS);
-  //    PTS = originalPTS + publishoffset;
-  //  }
-
-  //}
 
   _lastOriginalPTS = originalPTS;
   _lastOriginalDTS = originalDTS;
