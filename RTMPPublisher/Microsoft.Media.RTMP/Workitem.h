@@ -165,7 +165,7 @@ namespace Microsoft
           if (!(_sample == nullptr))
           {
 
-            if(FAILED(_sample->GetUINT64(PARENT_SAMPLE_TIMESTAMP, (ULONGLONG*)&retval)))
+         
               ThrowIfFailed(_sample->GetSampleTime(&retval));
           }
           else

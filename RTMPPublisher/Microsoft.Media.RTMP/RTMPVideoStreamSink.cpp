@@ -137,8 +137,8 @@ IFACEMETHODIMP RTMPVideoStreamSink::ProcessSample(IMFSample *pSample)
       ThrowIfFailed(MakeAndInitialize<WorkItem>(
         &wi,
         make_shared<MediaSampleInfo>(ContentType::VIDEO,
-          pSample)
-        ));
+        pSample)
+      ));
 
 
       ThrowIfFailed(BeginProcessNextWorkitem(wi));
@@ -148,10 +148,8 @@ IFACEMETHODIMP RTMPVideoStreamSink::ProcessSample(IMFSample *pSample)
 #endif
     }
     else
-    { 
-      LONGLONG sampleTime = 0;
-      ThrowIfFailed(pSample->GetSampleTime(&sampleTime), MF_E_NO_SAMPLE_TIMESTAMP, L"Could not get timestamp from video sample");
-      ThrowIfFailed(pSample->SetUINT64(PARENT_SAMPLE_TIMESTAMP, sampleTime));
+    {
+
 
       for (auto profstate : _targetProfileStates)
       {
@@ -161,8 +159,8 @@ IFACEMETHODIMP RTMPVideoStreamSink::ProcessSample(IMFSample *pSample)
         {
           ThrowIfFailed(profstate->DelegateSink->GetStreamSinkIndex(this->_majorType, sinkidx));
           ThrowIfFailed(profstate->DelegateWriter->WriteSample(sinkidx, pSample));
-           
-        
+
+
           LOG("Sent video sample to sink writer");
         }
         catch (...)
@@ -240,7 +238,7 @@ IFACEMETHODIMP RTMPVideoStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
         ThrowIfFailed(MakeAndInitialize<WorkItem>(
           &wi,
           markerInfo
-          ));
+        ));
 
         ThrowIfFailed(BeginProcessNextWorkitem(wi));
 
@@ -394,20 +392,46 @@ void RTMPVideoStreamSink::PrepareTimestamps(MediaSampleInfo* sampleInfo, LONGLON
   else
   {
 
-    if (_gaplength > 0)
-    {
-      auto frameoffset = (originalDTS - _lastOriginalDTS) - _gaplength;
-      DTS = _lastDTS + frameoffset;
-      PTS = originalPTS + publishoffset;
-      _gaplength = 0;
-    }
-    else
-    {
-      DTS = _lastDTS + (originalDTS - _lastOriginalDTS);
-      PTS = originalPTS + publishoffset;
-    }
-
+    DTS = _lastDTS + _sampleInterval;
+    PTS = _lastPTS + _sampleInterval;
   }
+
+
+  //if (_startPTS < 0) //first video sample
+  //{
+
+  //  //if video timestamp does not start at clock start - we offset it to start at clock start
+  //  if (originalDTS > _clockStartOffset)
+  //  {
+  //    DTS = _clockStartOffset + publishoffset;
+  //    PTS = DTS;
+  //  }
+  //  else
+  //  {
+  //    DTS = originalDTS + publishoffset;
+  //    PTS = originalPTS + publishoffset;
+  //  }
+
+  //  _startPTS = PTS;
+
+  //}
+  //else
+  //{
+
+  //  if (_gaplength > 0)
+  //  {
+  //    auto frameoffset = (originalDTS - _lastOriginalDTS) - _gaplength;
+  //    DTS = _lastDTS + frameoffset;
+  //    PTS = originalPTS + publishoffset;
+  //    _gaplength = 0;
+  //  }
+  //  else
+  //  {
+  //    DTS = _lastDTS + (originalDTS - _lastOriginalDTS);
+  //    PTS = originalPTS + publishoffset;
+  //  }
+
+  //}
 
   _lastOriginalPTS = originalPTS;
   _lastOriginalDTS = originalDTS;
@@ -425,13 +449,13 @@ void RTMPVideoStreamSink::PrepareTimestamps(MediaSampleInfo* sampleInfo, LONGLON
   << ", Size = " << sampleInfo->GetTotalDataLength() << " bytes"
   );*/
 }
- 
+
 
 std::vector<BYTE> RTMPVideoStreamSink::MakeDecoderConfigRecord(MediaSampleInfo* pSampleInfo)
 {
   //has the media type been updated by the encoder with the sequence header ?
   std::vector<BYTE> retval;
-  
+
 
   //if not we build it by hand
   retval.push_back(1);

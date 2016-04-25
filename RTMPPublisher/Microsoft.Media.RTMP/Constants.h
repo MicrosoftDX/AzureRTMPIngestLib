@@ -165,9 +165,7 @@ namespace Microsoft
         Azure = 0, Wowza = 1
       };
 
-      // {750AE5CC-9A66-49DA-BB29-D606A72ACF8E}
-   
-      const GUID PARENT_SAMPLE_TIMESTAMP = { 0x750ae5cc, 0x9a66, 0x49da, 0xbb, 0x29, 0xd6, 0x6, 0xa7, 0x2a, 0xcf, 0x8e };
+     
     
     }
   }

@@ -134,10 +134,7 @@ IFACEMETHODIMP RTMPAudioStreamSink::ProcessSample(IMFSample *pSample)
     }
     else
     { 
-      LONGLONG sampleTime = 0;
-      ThrowIfFailed(pSample->GetSampleTime(&sampleTime), MF_E_NO_SAMPLE_TIMESTAMP, L"Could not get timestamp from audio sample");
-      ThrowIfFailed(pSample->SetUINT64(PARENT_SAMPLE_TIMESTAMP, sampleTime));
-
+      
       for (auto profstate : _targetProfileStates)
       {
         DWORD sinkidx = 0;
