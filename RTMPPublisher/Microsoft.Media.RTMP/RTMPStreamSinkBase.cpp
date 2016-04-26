@@ -227,7 +227,7 @@ IFACEMETHODIMP RTMPStreamSinkBase::GetMediaTypeHandler(IMFMediaTypeHandler **ppH
 IFACEMETHODIMP RTMPStreamSinkBase::Flush()
 {
   HRESULT hr = S_OK;
-  LOG("Flush()");
+  //LOG("Flush()");
   return hr;
 }
 
@@ -405,7 +405,7 @@ HRESULT RTMPStreamSinkBase::StreamSinkClockStart(MFTIME hnsSystemTime, LONGLONG 
 {
   try
   {
-    LOG("Stream Sink started");
+    //LOG("Stream Sink started");
     _clockStartOffset = llClockStartOffset;
     SetState(SinkState::RUNNING);
 

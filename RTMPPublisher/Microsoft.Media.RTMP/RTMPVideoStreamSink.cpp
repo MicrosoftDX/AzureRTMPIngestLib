@@ -88,7 +88,7 @@ HRESULT RTMPVideoStreamSink::CreateMediaType(MediaEncodingProfile^ encodingProfi
     _streamsinkname = L"videosink:" + to_wstring((int)encodingProfile->Video->Bitrate);
 #endif
 
-    LOG("Video media type created")
+    //LOG("Video media type created")
       return S_OK;
   }
   catch (const HRESULT& hr)
@@ -127,7 +127,7 @@ IFACEMETHODIMP RTMPVideoStreamSink::ProcessSample(IMFSample *pSample)
 
       if (sampleTime < _clockStartOffset) //we do not process samples predating the clock start offset;
       {
-        LOG("Not processing video sample")
+        //LOG("Not processing video sample")
           return S_OK;
       }
 
@@ -144,7 +144,7 @@ IFACEMETHODIMP RTMPVideoStreamSink::ProcessSample(IMFSample *pSample)
       ThrowIfFailed(BeginProcessNextWorkitem(wi));
 
 #if defined(_DEBUG)
-      LOG("Dispatched video sample - " << _streamsinkname);
+      //LOG("Dispatched video sample - " << _streamsinkname);
 #endif
     }
     else
@@ -161,11 +161,11 @@ IFACEMETHODIMP RTMPVideoStreamSink::ProcessSample(IMFSample *pSample)
           ThrowIfFailed(profstate->DelegateWriter->WriteSample(sinkidx, pSample));
 
 
-          LOG("Sent video sample to sink writer");
+          //LOG("Sent video sample to sink writer");
         }
         catch (...)
         {
-          LOG("Error sending video sample to sink writer");
+          //LOG("Error sending video sample to sink writer");
           continue;
         }
       }
@@ -229,7 +229,7 @@ IFACEMETHODIMP RTMPVideoStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
       {
 
         SetState(SinkState::EOS);
-        LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video stream end of segment");
+        //LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video stream end of segment");
         NotifyStreamSinkMarker(markerInfo->GetContextValue());
         create_task([this]() { _mediasinkparent->StopPresentationClock(); });
       }
@@ -268,7 +268,7 @@ IFACEMETHODIMP RTMPVideoStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
 
 
         SetState(SinkState::EOS);
-        LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video stream end of segment");
+        //LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video stream end of segment");
         NotifyStreamSinkMarker(markerInfo->GetContextValue());
 
         //if aggregating - the sink will call this on the aggregating parent
@@ -276,7 +276,7 @@ IFACEMETHODIMP RTMPVideoStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
       }
       else
       {
-        LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video stream marker");
+        //LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video stream marker");
 
         for (auto profstate : _targetProfileStates)
         {
@@ -594,9 +594,9 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
 
 
 
-#if defined(_DEBUG)
-    LOG("Queued Video Sample @ " << uiDTS << " - " << _streamsinkname);
-#endif
+ 
+    LOG(_streamsinkname << ",Video TS = " << uiDTS);
+ 
 
   }
   else //marker
@@ -609,7 +609,7 @@ HRESULT RTMPVideoStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
       auto tick = markerInfo->GetMarkerTick();
       _gaplength += (tick - _lastOriginalPTS);
 
-      LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video stream gap at : " << tick << ", Last Original PTS : " << _lastOriginalPTS << ", gaplength :" << _gaplength);
+      //LOG("VideoStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Video stream gap at : " << tick << ", Last Original PTS : " << _lastOriginalPTS << ", gaplength :" << _gaplength);
 
       _lastOriginalPTS = tick;
 

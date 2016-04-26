@@ -168,7 +168,7 @@ Windows::Foundation::IAsyncOperation<IMediaExtension^>^ RTMPPublishSession::GetC
       {
         t.get();
 
-        LOG("RTMP Connected");
+        //LOG("RTMP Connected");
         ComPtr<IInspectable> tempInsp(_sink.Get());
         return reinterpret_cast<IMediaExtension^>(tempInsp.Get());
       }

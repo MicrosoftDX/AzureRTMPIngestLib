@@ -94,7 +94,7 @@ task<void> RTMPMessenger::HandshakeAsync()
 
 task<void> RTMPMessenger::HandshakeAsyncAzure()
 {
-  LOG("Handshaking with Azure Media Services RTMP Ingest");
+  //LOG("Handshaking with Azure Media Services RTMP Ingest");
   return  SendC0C1Async()
     .then([this](task<unsigned int> antecedent)
   {
@@ -245,7 +245,7 @@ task<void> RTMPMessenger::HandshakeAsyncAzure()
 
 task<void> RTMPMessenger::HandshakeAsyncWowza()
 {
-  LOG("Handshaking with Wowza Media Server RTMP Ingest");
+  //LOG("Handshaking with Wowza Media Server RTMP Ingest");
   return  SendC0C1Async()
     .then([this](task<unsigned int> antecedent)
   {

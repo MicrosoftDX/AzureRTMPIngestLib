@@ -77,7 +77,7 @@ HRESULT RTMPAudioStreamSink::CreateMediaType(MediaEncodingProfile^ encodingProfi
     //Set CBR
     ThrowIfFailed(_currentMediaType->SetUINT32(CODECAPI_AVEncCommonRateControlMode, eAVEncCommonRateControlMode::eAVEncCommonRateControlMode_CBR));
 
-    LOG("Audio media type created")
+    //LOG("Audio media type created")
       return S_OK;
   }
   catch (const HRESULT& hr)
@@ -114,7 +114,7 @@ IFACEMETHODIMP RTMPAudioStreamSink::ProcessSample(IMFSample *pSample)
 
       if (sampleTime < _clockStartOffset) //we do not process samples predating the clock start offset;
       {
-        LOG("Not processing audio sample")
+        //LOG("Not processing audio sample")
           return S_OK;
       }
 
@@ -129,7 +129,7 @@ IFACEMETHODIMP RTMPAudioStreamSink::ProcessSample(IMFSample *pSample)
       ThrowIfFailed(BeginProcessNextWorkitem(wi));
 
 #if defined(_DEBUG)
-      LOG("Dispatched audio sample - " << _streamsinkname);
+      //LOG("Dispatched audio sample - " << _streamsinkname);
 #endif
     }
     else
@@ -187,7 +187,7 @@ IFACEMETHODIMP RTMPAudioStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
 
   try
   {
-    LOG("Audio Marker Arrived");
+    //LOG("Audio Marker Arrived");
 
     if (IsState(SinkState::UNINITIALIZED))
       throw ref new COMException(MF_E_NOT_INITIALIZED, "Audio Sink uninitialized");
@@ -210,7 +210,7 @@ IFACEMETHODIMP RTMPAudioStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
       if (markerInfo->GetMarkerType() == MFSTREAMSINK_MARKER_TYPE::MFSTREAMSINK_MARKER_ENDOFSEGMENT)
       {
         SetState(SinkState::EOS);
-        LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio stream end of segment");
+        //LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio stream end of segment");
         NotifyStreamSinkMarker(markerInfo->GetContextValue());
         create_task([this]() { _mediasinkparent->StopPresentationClock(); });
       }
@@ -251,12 +251,12 @@ IFACEMETHODIMP RTMPAudioStreamSink::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarker
 
         SetState(SinkState::EOS);
         NotifyStreamSinkMarker(markerInfo->GetContextValue());
-        LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio stream end of segment");
+        //LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio stream end of segment");
       }
       else
       {
 
-        LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio stream marker");
+        //LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio stream marker");
         for (auto profstate : _targetProfileStates)
         {
           DWORD sinkidx = 0;
@@ -480,7 +480,7 @@ HRESULT RTMPAudioStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
     }
 
 #if defined(_DEBUG)
-    LOG("Queued Audio Sample @ " << uiPTS << " - " << _streamsinkname);
+    //LOG("Queued Audio Sample @ " << uiPTS << " - " << _streamsinkname);
 #endif
 
   }
@@ -493,7 +493,7 @@ HRESULT RTMPAudioStreamSink::CompleteProcessNextWorkitem(IMFAsyncResult *pAsyncR
       //_gaplength += _sampleInterval;
       auto tick = markerInfo->GetMarkerTick();
       _gaplength += (tick - _lastOriginalPTS);
-      LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio stream gap at : " << tick << ", Last Original PTS : " << _lastOriginalPTS << ", gaplength :" << _gaplength);
+      //LOG("AudioStreamSink" << (IsAggregating() ? "(Aggregating)" : "") << "::Audio stream gap at : " << tick << ", Last Original PTS : " << _lastOriginalPTS << ", gaplength :" << _gaplength);
       _lastOriginalPTS = tick;
 
     }

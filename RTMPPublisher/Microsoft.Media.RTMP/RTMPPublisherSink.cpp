@@ -190,7 +190,7 @@ IFACEMETHODIMP RTMPPublisherSink::RemoveStreamSink(DWORD dwStreamSinkIdentifier)
 IFACEMETHODIMP RTMPPublisherSink::SetPresentationClock(IMFPresentationClock *pPresentationClock)
 {
 
-  LOG("RTMPPublisherSink" << (IsAggregating() ? "(Aggregating)" : (IsAggregated() ? "(Child)" : "")) << "::SetPresentationClock()");
+  //LOG("RTMPPublisherSink" << (IsAggregating() ? "(Aggregating)" : (IsAggregated() ? "(Child)" : "")) << "::SetPresentationClock()");
 
   if (IsState(SinkState::SHUTDOWN))
     return MF_E_SHUTDOWN;
@@ -271,7 +271,7 @@ IFACEMETHODIMP RTMPPublisherSink::Shutdown()
   if (dxgimgr != nullptr)
     MFUnlockDXGIDeviceManager();
 
-  LOG("RTMPPublisherSink" << (IsAggregating() ? "(Aggregating)" : (IsAggregated() ? "(Child)" : "")) << "::Shutdown()");
+  //LOG("RTMPPublisherSink" << (IsAggregating() ? "(Aggregating)" : (IsAggregated() ? "(Child)" : "")) << "::Shutdown()");
 
   SetState(SinkState::SHUTDOWN);
 
@@ -338,7 +338,7 @@ IFACEMETHODIMP RTMPPublisherSink::OnClockStop(MFTIME hnsSystemTime)
   else
     lock.lock();
 
-  LOG("RTMPPublisherSink" << (IsAggregating() ? "(Aggregating)" : (IsAggregated() ? "(Child)" : "")) << "::OnClockStop()");
+  //LOG("RTMPPublisherSink" << (IsAggregating() ? "(Aggregating)" : (IsAggregated() ? "(Child)" : "")) << "::OnClockStop()");
 
   SetState(SinkState::STOPPED);
 
@@ -408,14 +408,14 @@ void RTMPPublisherSink::StopPresentationClock()
   if (!IsState(SinkState::RUNNING))
     return;
 
-  LOG("RTMPPublisherSink" << (IsAggregating() ? "(Aggregating)" : (IsAggregated() ? "(Child)" : "")) << "::StopPresentationClock()");
+  //LOG("RTMPPublisherSink" << (IsAggregating() ? "(Aggregating)" : (IsAggregated() ? "(Child)" : "")) << "::StopPresentationClock()");
 
   size_t waitingtoshutdown = std::count_if(begin(_targetProfileStates), end(_targetProfileStates), [this](shared_ptr<ProfileState> ps)
   {
     return ps->DelegateSink == nullptr || (ps->DelegateSink != nullptr && ps->DelegateSink->IsState(SinkState::SHUTDOWN) == false);
   });
 
-  LOGIF(IsAggregating(), "RTMPPublisherSink::Waiting to shut down " << waitingtoshutdown << " children sinks");
+  //LOGIF(IsAggregating(), "RTMPPublisherSink::Waiting to shut down " << waitingtoshutdown << " children sinks");
 
   //if aggregating - check to see if all the children sinks have stopped properly
   if (IsAggregating() && waitingtoshutdown > 0)
@@ -624,7 +624,7 @@ void RTMPPublisherSink::Initialize(std::vector<PublishProfile^> targetProfiles,
       }
     }
 
-    LOG("RTMPPublisherSink" << (IsAggregating() ? "(Aggregating)" : (IsAggregated() ? "(Child)" : "")) << "::Initialize()");
+    //LOG("RTMPPublisherSink" << (IsAggregating() ? "(Aggregating)" : (IsAggregated() ? "(Child)" : "")) << "::Initialize()");
   }
   catch (const std::exception& ex)
   {
