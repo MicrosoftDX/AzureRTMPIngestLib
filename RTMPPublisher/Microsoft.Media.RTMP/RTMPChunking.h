@@ -282,40 +282,40 @@ namespace Microsoft
 
           if (_chunkType == RTMPChunkType::Type0) //format : timestamp(3 bytes NBO)+messagelength(3 bytes NBO)+messagetypeid(1 byte)+messagestreamid(4 bytes)
           {
-            BitOp::AddToBitstream<unsigned int>(_extendedTimestamp ? 0xFFFFFF : _timestamp, retval, true, 3);
+            BitOp::AddToBitstream<unsigned int>(_timestamp > 0xFFFFFF ? 0xFFFFFF : _timestamp, retval, true, 3);
             BitOp::AddToBitstream(_messageLength, retval, true, 3);
             BitOp::AddToBitstream(_messageTypeID, retval);
             BitOp::AddToBitstream(_messageStreamID, retval, false);
-            if (_extendedTimestamp)
+            if (_timestamp > 0xFFFFFF)
             {
               BitOp::AddToBitstream(_timestamp, retval);
             }
           }
           else if (_chunkType == RTMPChunkType::Type1)
           {
-            BitOp::AddToBitstream<unsigned int>(_extendedTimestamp ? 0xFFFFFF : _timestamp, retval, true, 3);
+            BitOp::AddToBitstream<unsigned int>(_timestamp > 0xFFFFFF ? 0xFFFFFF : _timestamp, retval, true, 3);
             BitOp::AddToBitstream(_messageLength, retval, true, 3);
             BitOp::AddToBitstream(_messageTypeID, retval);
-            if (_extendedTimestamp)
+            if (_timestamp > 0xFFFFFF)
             {
               BitOp::AddToBitstream(_timestamp, retval);
             }
           }
           else if (_chunkType == RTMPChunkType::Type2)
           {
-            BitOp::AddToBitstream<unsigned int>(_extendedTimestamp ? 0xFFFFFF : _timestamp, retval, true, 3);
-            if (_extendedTimestamp)
+            BitOp::AddToBitstream<unsigned int>(_timestamp > 0xFFFFFF ? 0xFFFFFF : _timestamp, retval, true, 3);
+            if (_timestamp > 0xFFFFFF)
             {
               BitOp::AddToBitstream(_timestamp, retval);
             }
           }
-          else if (_chunkType == RTMPChunkType::Type3)
+          /*else if (_chunkType == RTMPChunkType::Type3)
           {
             if (_extendedTimestamp)
             {
               BitOp::AddToBitstream(_timestamp, retval);
             }
-          }
+          }*/
 
           if (_payload != nullptr)
           {
@@ -387,7 +387,7 @@ namespace Microsoft
         unsigned int _messageLength = 0U;
         BYTE _messageTypeID = 0;
         unsigned int _messageStreamID = 0U;
-        bool _extendedTimestamp = false;
+    //    bool _extendedTimestamp = false;
         shared_ptr<vector<BYTE>> _payload;
       };
 
