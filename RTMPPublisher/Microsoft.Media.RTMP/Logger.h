@@ -1,27 +1,4 @@
-/****************************************************************************************************************************
 
-RTMP Live Publishing Library
-
-Copyright (c) Microsoft Corporation
-
-All rights reserved.
-
-MIT License
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
-files (the ""Software""), to deal in the Software without restriction, including without limitation the rights to use, copy,
-modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
-OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
-*****************************************************************************************************************************/
 #pragma once
 
 #define LOGGER_INCL
@@ -33,10 +10,13 @@ OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <windows.storage.h>  
 #include <windows.applicationmodel.core.h>
 #include <windows.ui.core.h> 
+#include <vector>
+#include <windows.foundation.diagnostics.h>
+#include <mutex>
 
 using namespace std;
 using namespace Concurrency;
-
+using namespace Windows::Foundation::Diagnostics;
 
 #if defined(_VSLOG) && defined(LOGGER_INCL) && defined(_DEBUG)
 
@@ -100,16 +80,10 @@ if(!(cond))\
 }\
 }\
 
-#define BINLOG(nm,b,s) \
-{\
- SYSTEMTIME systime;\
-  GetSystemTime(&systime);\
-  std::wostringstream _log;\
-  _log << nm << "_" << systime.wHour << "_" << systime.wMinute << "_" << systime.wSecond << "_" << systime.wMilliseconds;\
-  FileLogger::Current()->OutputFullFile(_log.str().data(),b,s);\
-}\
+#define BINLOG(nm,b,s) 
 
-#elif defined(_FILELOG) && defined(LOGGER_INCL) && defined(_DEBUG)
+#elif defined(_FILELOG) && defined(LOGGER_INCL)
+
 
 #define LOG(s) \
 {\
@@ -151,6 +125,7 @@ if(cond)\
   FileLogger::Current()->OutputFileLog(_log.str().data());\
 }\
 }\
+
 #define LOGIFNOT(cond,s) \
 {\
 if(!(cond))\
@@ -163,6 +138,64 @@ if(!(cond))\
 }\
 }\
 
+/*
+
+
+#define LOG(s) \
+{\
+  SYSTEMTIME systime;\
+  GetSystemTime(&systime);\
+  std::wostringstream _log;\
+  _log <<"["<<systime.wHour<<":"<<systime.wMinute<<":"<<systime.wSecond<<":"<<systime.wMilliseconds<<"] "<<s <<"\r\n"; \
+  FileLogging::Current()->LogMessage(ref new Platform::String(_log.str().data()));\
+}\
+
+#define LOGIF(cond,s) \
+{\
+if(cond)\
+{\
+  SYSTEMTIME systime;\
+  GetSystemTime(&systime);\
+  std::wostringstream _log;\
+  _log <<"["<<systime.wHour<<":"<<systime.wMinute<<":"<<systime.wSecond<<":"<<systime.wMilliseconds<<"] "<<s <<"\r\n"; \
+  FileLogging::Current()->LogMessage(ref new Platform::String(_log.str().data()));\
+}\
+}\
+
+#define LOGIIF(cond,s1,s2) \
+{\
+if(cond)\
+{\
+  SYSTEMTIME systime;\
+  GetSystemTime(&systime);\
+  std::wostringstream _log;\
+  _log <<"["<<systime.wHour<<":"<<systime.wMinute<<":"<<systime.wSecond<<":"<<systime.wMilliseconds<<"] "<<s1 <<"\r\n"; \
+  FileLogging::Current()->LogMessage(ref new Platform::String(_log.str().data()));\
+}\
+  else\
+{\
+  SYSTEMTIME systime;\
+  GetSystemTime(&systime);\
+  std::wostringstream _log;\
+  _log <<"["<<systime.wHour<<":"<<systime.wMinute<<":"<<systime.wSecond<<":"<<systime.wMilliseconds<<"] "<<s2 <<"\r\n"; \
+  FileLogging::Current()->LogMessage(ref new Platform::String(_log.str().data()));\
+}\
+}\
+
+#define LOGIFNOT(cond,s) \
+{\
+if(!(cond))\
+{\
+  SYSTEMTIME systime;\
+  GetSystemTime(&systime);\
+  std::wostringstream _log;\
+  _log <<"["<<systime.wHour<<":"<<systime.wMinute<<":"<<systime.wSecond<<":"<<systime.wMilliseconds<<"] "<<s <<"\r\n"; \
+  FileLogging::Current()->LogMessage(ref new Platform::String(_log.str().data()));\
+}\
+}\
+
+
+*/
 
 #define BINLOG(nm,b,s) 
 
@@ -189,7 +222,52 @@ if(!(cond))\
 #define LOGIFNOT(cond,s)
 #define BINLOG(nm,b,s) 
 
-#endif 
+#endif
+
+ref class FileLogging sealed
+{
+public:
+  FileLogging()
+  {
+    channel = ref new LoggingChannel("RTSPLogChannel", ref new LoggingChannelOptions());
+    session = ref new FileLoggingSession("RTSPLog");
+    session->AddLoggingChannel(channel);
+    session->LogFileGenerated +=
+      ref new Windows::Foundation::TypedEventHandler<Windows::Foundation::Diagnostics::IFileLoggingSession ^, Windows::Foundation::Diagnostics::LogFileGeneratedEventArgs ^>(
+        this, &FileLogging::OnLogFileGenerated);
+  }
+
+
+  virtual ~FileLogging()
+  {
+    auto file = create_task(session->CloseAndSaveToFileAsync()).get();
+    create_task(file->CopyAsync(Windows::Storage::KnownFolders::VideosLibrary)).get();
+  }
+
+  static FileLogging^ Current()
+  {
+    if (current == nullptr)
+      current = ref new FileLogging();
+
+    return current;
+  }
+
+  void OnLogFileGenerated(Windows::Foundation::Diagnostics::IFileLoggingSession ^sender, Windows::Foundation::Diagnostics::LogFileGeneratedEventArgs ^args)
+  {
+    create_task(args->File->CopyAsync(Windows::Storage::KnownFolders::VideosLibrary)).get();
+  }
+
+  void LogMessage(Platform::String^  message)
+  {
+    channel->LogMessage(message);
+  }
+
+private:
+  LoggingChannel^ channel = nullptr;
+  FileLoggingSession^ session = nullptr;
+  static FileLogging^ current;
+};
+
 
 
 class FileLogger
@@ -199,7 +277,15 @@ public:
   FileLogger()
   {
 
-   
+    SYSTEMTIME systime;
+    ::GetSystemTime(&systime);
+    std::wostringstream fnm;
+    fnm << systime.wYear << "_" << systime.wMonth << "_" << systime.wDay << "_" << systime.wHour << "_" << systime.wMinute << "_" << systime.wSecond << L"_rtsp" << ".log";
+
+
+
+    pFile = Concurrency::create_task(Windows::Storage::KnownFolders::VideosLibrary->CreateFileAsync(ref new Platform::String(fnm.str().data()),
+      Windows::Storage::CreationCollisionOption::GenerateUniqueName)).get();
 
     return;
 
@@ -208,9 +294,14 @@ public:
 
 
 public:
+
   Windows::Storage::IStorageFile^ pFile;
   static shared_ptr<FileLogger> pFileLogger;
   Windows::UI::Core::ICoreDispatcher^ cordisp;
+  std::recursive_mutex _lock;
+  wstring linebuffer;
+  unsigned int sizewritten = 0;
+
   static shared_ptr<FileLogger> Current()
   {
     if (pFileLogger == nullptr)
@@ -220,11 +311,47 @@ public:
 
   void OutputFileLog(const WCHAR *Message)
   {
+    if (pFile == nullptr || linebuffer.size() < 1024 * 5)
+    {
+      linebuffer += Message;
+    }
 
-    std::wstring line = Message;
-    line.append(L"\r\n");
-    Windows::Storage::FileIO::AppendTextAsync(pFile, ref new Platform::String(line.data()));
+    if (pFile != nullptr && linebuffer.size() >= 1024 * 5) {
 
+      if (sizewritten < 1024 * 500)
+      {
+        {
+         // std::lock_guard<recursive_mutex> lock(_lock);
+          Concurrency::create_task(Windows::Storage::FileIO::AppendTextAsync(pFile, ref new Platform::String(linebuffer.data()))).get();
+        }
+        sizewritten += (unsigned int)linebuffer.size();
+        linebuffer = L"";
+      }
+      else
+      {
+        {
+         // std::lock_guard<recursive_mutex> lock(_lock);
+          pFile = Concurrency::create_task(Windows::Storage::FileIO::AppendTextAsync(pFile, ref new Platform::String(linebuffer.data())))
+            .then([this](task<void> t)
+          {
+            t.get();
+
+            linebuffer = L"";
+            sizewritten = 0;
+            SYSTEMTIME systime;
+            ::GetSystemTime(&systime);
+            std::wostringstream fnm;
+            fnm << systime.wYear << "_" << systime.wMonth << "_" << systime.wDay << "_" << systime.wHour << "_" << systime.wMinute << "_" << systime.wSecond << L"_rtsp" << ".log";
+
+
+            return Windows::Storage::KnownFolders::VideosLibrary->CreateFileAsync(ref new Platform::String(fnm.str().data()),
+              Windows::Storage::CreationCollisionOption::GenerateUniqueName);
+
+          }).get();
+        }
+      }
+
+    }
   }
 
   void OutputBinLog(BYTE *Message, unsigned int size)
@@ -239,15 +366,21 @@ public:
 
   void OutputFullFile(wstring FileName, BYTE *Message, unsigned int size)
   {
-    HRESULT hr = S_OK; 
+    HRESULT hr = S_OK;
 
+    Windows::Storage::IStorageFile^ pFile;
     Concurrency::create_task(Windows::Storage::KnownFolders::VideosLibrary->CreateFileAsync(ref new Platform::String(FileName.data()),
-      Windows::Storage::CreationCollisionOption::GenerateUniqueName))
-      .then([this, Message, size](Windows::Storage::IStorageFile^ fl)
-    {      
-      return Windows::Storage::FileIO::WriteBytesAsync(fl, ref new Platform::Array<BYTE>(Message, size));
-    }).wait();
+      Windows::Storage::CreationCollisionOption::GenerateUniqueName)).then([this, Message, size](Windows::Storage::IStorageFile^ fl)
+    {
+      Platform::Array<BYTE>^ arr = ref new Platform::Array<BYTE>(size);
+      for (unsigned int i = 0; i < size; i++)
+        arr->set(i, Message[i]);
+      Concurrency::create_task(Windows::Storage::FileIO::WriteBytesAsync(fl, arr));
+    });
 
   }
 
 };
+
+
+

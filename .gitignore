@@ -231,3 +231,4 @@ _Pvt_Extensions
 
 # FAKE - F# Make
 .fake/
+/RTMPPublisher/Microsoft.Media.RTMP/x64/Debug
