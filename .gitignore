@@ -232,3 +232,5 @@ _Pvt_Extensions
 # FAKE - F# Make
 .fake/
 /RTMPPublisher/Microsoft.Media.RTMP/x64/Debug
+/RTMPPublisher/Microsoft.Media.RTMP/Win32/Debug
+/RTMPPublisher/RTMPPublisher.VC.db

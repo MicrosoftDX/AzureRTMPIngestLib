@@ -68,7 +68,7 @@ namespace Microsoft
           _timestamp(timestamp),
           _messageLength(messageLength),
           _messageTypeID(messageTypeID),
-          _messageStreamID(messageStreamID)
+          _messageStreamID(messageStreamID) 
         {
           if (payloadlen > 0 && payload != nullptr)
           {
@@ -90,7 +90,7 @@ namespace Microsoft
           _chunkStreamID(chunkStreamID),
           _timestamp(timestampDelta),
           _messageLength(messageLength),
-          _messageTypeID(messageTypeID)
+          _messageTypeID(messageTypeID) 
         {
           if (payloadlen > 0 && payload != nullptr)
           {
@@ -102,13 +102,14 @@ namespace Microsoft
         }
 
         ChunkMessage(
+          BYTE chunkType,
           unsigned int chunkStreamID,
           unsigned int timestampDelta,
           BYTE* payload = nullptr,
           unsigned int payloadlen = 0U) :
-          _chunkType(RTMPChunkType::Type2),
+          _chunkType(chunkType),
           _chunkStreamID(chunkStreamID),
-          _timestamp(timestampDelta)
+          _timestamp(timestampDelta) 
         {
           if (payloadlen > 0 && payload != nullptr)
           {
@@ -119,12 +120,12 @@ namespace Microsoft
 
         }
 
-        ChunkMessage(
+        /*ChunkMessage( 
           unsigned int chunkStreamID,
           BYTE* payload = nullptr,
           unsigned int payloadlen = 0U) :
           _chunkType(RTMPChunkType::Type3),
-          _chunkStreamID(chunkStreamID)
+          _chunkStreamID(chunkStreamID) 
         {
           if (payloadlen > 0 && payload != nullptr)
           {
@@ -133,7 +134,7 @@ namespace Microsoft
             memcpy_s(&*(_payload->begin()), payloadlen, payload, payloadlen);
           }
 
-        }
+        }*/
 
         unsigned int GetHeaderSize()
         {
@@ -309,13 +310,13 @@ namespace Microsoft
               BitOp::AddToBitstream(_timestamp, retval);
             }
           }
-          /*else if (_chunkType == RTMPChunkType::Type3)
+          else if (_chunkType == RTMPChunkType::Type3)
           {
-            if (_extendedTimestamp)
+            if (_timestamp > 0xFFFFFF)
             {
               BitOp::AddToBitstream(_timestamp, retval);
             }
-          }*/
+          }
 
           if (_payload != nullptr)
           {
@@ -387,7 +388,7 @@ namespace Microsoft
         unsigned int _messageLength = 0U;
         BYTE _messageTypeID = 0;
         unsigned int _messageStreamID = 0U;
-    //    bool _extendedTimestamp = false;
+        //bool _extendedTimestamp = false;
         shared_ptr<vector<BYTE>> _payload;
       };
 
@@ -560,7 +561,10 @@ namespace Microsoft
             }
             else
             {
-              bs = ChunkMessage(chunkStreamID,
+              bs = ChunkMessage(
+                RTMPChunkType::Type3,
+                chunkStreamID,
+                rtmpmsg->GetTimestamp(),
                 &(*(rtmpmsg->GetPayload()->begin() + ((i * chunkSize)))),
                 min(messagelen - (i * chunkSize), chunkSize)).ToBitstream();
             }
@@ -573,53 +577,7 @@ namespace Microsoft
           return retval;
         }
 
-        static std::vector<shared_ptr<vector<BYTE>>> ToChunkedBitstreams(unsigned int chunkStreamID, unsigned int chunkSize, shared_ptr<RTMPMessage> rtmpmsg)
-        {
-          std::vector<shared_ptr<vector<BYTE>>> retval;
-          unsigned int messagelen = rtmpmsg->GetMessageLength();
-          int numchunks = (int) std::ceil((double) messagelen / (double) chunkSize);
-          for (int i = 0; i < numchunks; i++)
-          {
-            shared_ptr<vector<BYTE>> bs;
-            if (i == 0)
-            {
-
-              if (rtmpmsg->IsTimestampDelta() == false)
-              {
-                bs = ChunkMessage(chunkStreamID,
-                  rtmpmsg->GetTimestamp(),
-                  rtmpmsg->GetMessageLength(),
-                  rtmpmsg->GetMessageTypeID(),
-                  rtmpmsg->GetMessageStreamID(),
-                  &(*(rtmpmsg->GetPayload()->begin() + (i * chunkSize))),
-                  min(messagelen - (i * chunkSize), chunkSize)).ToBitstream();
-              }
-              else
-              {
-                bs = ChunkMessage(chunkStreamID,
-                  rtmpmsg->GetTimestamp(),
-                  rtmpmsg->GetMessageLength(),
-                  rtmpmsg->GetMessageTypeID(),
-                  &(*(rtmpmsg->GetPayload()->begin() + (i * chunkSize))),
-                  min(messagelen - (i * chunkSize), chunkSize)).ToBitstream();
-              }
-
-
-            }
-            else
-            {
-              bs = ChunkMessage(chunkStreamID,
-                &(*(rtmpmsg->GetPayload()->begin() + ((i * chunkSize)))),
-                min(messagelen - (i * chunkSize), chunkSize)).ToBitstream();
-            }
-
-            retval.push_back(bs);
-
-          }
-          return retval;
-        }
-
-
+   
 
       };
 

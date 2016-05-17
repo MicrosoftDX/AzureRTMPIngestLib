@@ -223,53 +223,7 @@ if(!(cond))\
 #define BINLOG(nm,b,s) 
 
 #endif
-
-ref class FileLogging sealed
-{
-public:
-  FileLogging()
-  {
-    channel = ref new LoggingChannel("RTSPLogChannel", ref new LoggingChannelOptions());
-    session = ref new FileLoggingSession("RTSPLog");
-    session->AddLoggingChannel(channel);
-    session->LogFileGenerated +=
-      ref new Windows::Foundation::TypedEventHandler<Windows::Foundation::Diagnostics::IFileLoggingSession ^, Windows::Foundation::Diagnostics::LogFileGeneratedEventArgs ^>(
-        this, &FileLogging::OnLogFileGenerated);
-  }
-
-
-  virtual ~FileLogging()
-  {
-    auto file = create_task(session->CloseAndSaveToFileAsync()).get();
-    create_task(file->CopyAsync(Windows::Storage::KnownFolders::VideosLibrary)).get();
-  }
-
-  static FileLogging^ Current()
-  {
-    if (current == nullptr)
-      current = ref new FileLogging();
-
-    return current;
-  }
-
-  void OnLogFileGenerated(Windows::Foundation::Diagnostics::IFileLoggingSession ^sender, Windows::Foundation::Diagnostics::LogFileGeneratedEventArgs ^args)
-  {
-    create_task(args->File->CopyAsync(Windows::Storage::KnownFolders::VideosLibrary)).get();
-  }
-
-  void LogMessage(Platform::String^  message)
-  {
-    channel->LogMessage(message);
-  }
-
-private:
-  LoggingChannel^ channel = nullptr;
-  FileLoggingSession^ session = nullptr;
-  static FileLogging^ current;
-};
-
-
-
+ 
 class FileLogger
 {
 public:
