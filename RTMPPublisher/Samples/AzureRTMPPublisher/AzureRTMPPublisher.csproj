@@ -24,7 +24,7 @@
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <AppxBundle>Always</AppxBundle>
     <AppxBundlePlatforms>x86|x64|arm</AppxBundlePlatforms>
-    <PackageCertificateThumbprint>4C7D77ED7A797681D5F2955C44936A41BCE00CEF</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>CC69FC5BB012E9E4F6650D03FA5CB74695E023D0</PackageCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
@@ -164,9 +164,6 @@
   <ItemGroup>
     <SDKReference Include="Microsoft.VCLibs, Version=14.0">
       <Name>Visual C++ 2015 Runtime for Universal Windows Platform Apps</Name>
-    </SDKReference>
-    <SDKReference Include="Universal Smooth Streaming Client SDK, Version=1.0">
-      <Name>Microsoft Universal Smooth Streaming Client SDK</Name>
     </SDKReference>
   </ItemGroup>
   <ItemGroup>
